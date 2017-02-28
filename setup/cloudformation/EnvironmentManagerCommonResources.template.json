@@ -7,6 +7,11 @@
             "Description": "Master AWS account ID",
             "AllowedPattern": "[0-9]{12}"
         },
+        "pChildAccounts": {
+            "Type": "String",
+            "Description": "Child AWS account IDs",
+            "AllowedPattern": "^[0-9]{12}(\\s*,\\s*[0-9]{12})*$"
+        },
         "pLambdaFunctionBucket": {
             "Type": "String",
             "Description": "S3 Bucket containing code for Lambda functions",
@@ -927,6 +932,14 @@
                     "S3Key": "EnvironmentManager/InfraDynamoStreamReplica.zip"
                 },
                 "Description": "This function replicates data from DynamoDB tables in this account to the corresponding tables in the child accounts it manages.",
+                "Environment": {
+                    "Variables": {
+                        "DESTINATION_ACCOUNTS": {
+                            "ref": "pChildAccounts"
+                        },
+                        "WRITER_ROLE_NAME": "roleInfraDynamoStreamReplicaWriter"
+                    }
+                },
                 "FunctionName": "InfraDynamoStreamReplica",
                 "Handler": "index.handler",
                 "MemorySize": 128,
