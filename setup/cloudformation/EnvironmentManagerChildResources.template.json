@@ -33,6 +33,19 @@
                 "false",
                 "true"
             ]
+        },
+        "pEnvironmentManagerHost": {
+            "Type": "String",
+            "Description": "Environment Manager hostname"
+        },
+        "pEnvironmentManagerUsername": {
+            "Type": "String",
+            "Description": "Environment Manager username"
+        },
+        "pEnvironmentManagerPassword": {
+            "Type": "String",
+            "NoEcho": "true",
+            "Description": "Environment Manager password"
         }
     },
     "Conditions": {
@@ -66,6 +79,13 @@
                     "S3Key": "EnvironmentManager/InfraEnvironmentManagerScheduler.zip"
                 },
                 "Description": "This function turns each Auto Scaling Group on or off based on its schedule tag.",
+                "Environment": {
+                    "Variables": {
+                        "EM_HOST": { "ref": "pEnvironmentManagerHost" },
+                        "EM_USERNAME": { "ref": "pEnvironmentManagerUsername" },
+                        "EM_PASSWORD": { "ref": "pEnvironmentManagerPassword" }
+                    }
+                },
                 "FunctionName": "InfraEnvironmentManagerScheduler",
                 "Handler": "index.handler",
                 "MemorySize": 192,

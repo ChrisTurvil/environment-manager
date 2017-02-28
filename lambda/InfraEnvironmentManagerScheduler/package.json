@@ -17,8 +17,22 @@
     "request": "^2.75.0",
     "request-promise": "^4.1.1"
   },
+  "eslintConfig": {
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
+    "rules": {
+      "no-console": 0
+    }
+  },
   "devDependencies": {
     "chai": "^3.5.0",
+    "eslint": "^3.16.1",
     "mocha": "^3.1.2",
     "mocha-teamcity-reporter": "^1.1.1",
     "sinon": "^1.17.6"
