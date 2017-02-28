@@ -1,23 +1,14 @@
 /* Copyright (c) Trainline Limited. All rights reserved. See LICENSE.txt in the project root for license information. */
 'use strict';
 
+let process = require('process');
+
 /**
  * Node javascript lambda which updates dynamodb list of servers in AWS based on ASG contents and state and event messages
  * 
- * Modify these variables for your use case. This script needs to be run on master account and
+ * This script needs to be run on master account and
  * each of child accounts.
  */
-
-// Master account number
-let MASTER_ACCOUNT = // Assign the AWS account ID (string) of your master account.
-
-// IAM role that this script is running on, it has be the same on master and child accounts
-let SCRIPT_IAM_ROLE = 'roleInfraAsgScale';
-
-// This is ARN for the role to be assumed by child account script to modify master DynamoDb
-const MASTER_ACCOUNT_ROLE_ARN = `arn:aws:iam::${MASTER_ACCOUNT}:role/${SCRIPT_IAM_ROLE}`;
-
-console.log('Loading function');
 
 //Import libraries
 
@@ -34,14 +25,25 @@ let DEBUGMODE = true;
 let invoke_count = 1;
 
 function awsAccount(context) {
-    let match = /^arn:aws:lambda:[^:]*:([^:]+):function:/.exec(context.invokedFunctionArn);
-    if (match !== null && match.length > 1) {
-        return match[1];
-    }
-    throw new Error('Could not determine AWS account from context object.');
+  let match = /^arn:aws:lambda:[^:]*:([^:]+):function:/.exec(context.invokedFunctionArn);
+  if (match !== null && match.length > 1) {
+    return match[1];
+  }
+  throw new Error('Could not determine AWS account from context object.');
 }
 
 exports.handler = function (event, context) {
+  // Master account number
+  const MASTER_ACCOUNT = process.env.MASTER_ACCOUNT;
+
+  // IAM role that this script is running on, it has be the same on master and child accounts
+  const MASTER_IAM_ROLE = process.env.MASTER_IAM_ROLE;
+
+  // A topic to which this function will send messages about actions it has performed
+  const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
+
+  // This is ARN for the role to be assumed by child account script to modify master DynamoDb
+  const MASTER_ACCOUNT_ROLE_ARN = `arn:aws:iam::${MASTER_ACCOUNT}:role/${SCRIPT_IAM_ROLE}`;
 
   let isChildAccount = awsAccount(context) !== MASTER_ACCOUNT;
 
@@ -215,9 +217,10 @@ exports.handler = function (event, context) {
     message = { Sent: data, date: Date(), invoke_count: invoke_count, Debuginfo: DEBUG };
     sns.publish({
       Message: 'AUTOSCALING CHANGE: ' + JSON.stringify(message, null, 4),
-      TopicArn: 'arn:aws:sns:eu-west-1:886983751479:InfraGovernator',
+      TopicArn: SNS_TOPIC_ARN,
     }, function (err, SNSdata) {
-      return callback(null, data); }); // TODO: needs error handling!
+      return callback(null, data);
+    }); // TODO: needs error handling!
   }
 
   function updateDDB(data, callback) {
