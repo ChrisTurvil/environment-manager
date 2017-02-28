@@ -3,10 +3,7 @@
 
 const AWS = require('aws-sdk');
 const crypto = require('crypto');
-
-const DESTINATION_ACCOUNT_ID = ''; // Assign the AWS Account ID of your Environment Manager master account
-const DESTINATION_TABLE_NAME = 'InfraChangeAudit';
-const WRITER_ROLE_NAME = 'roleInfraEnvironmentManagerAuditWriter';
+const process = require('process');
 
 /* See example of string matched by DYNAMO_STREAM_ARN_REGEX below:
 /* arn:aws:dynamodb:us-west-2:account-id:table/ExampleTableWithStream/stream/2015-06-27T00:48:05.899
@@ -165,77 +162,82 @@ function getDynamoClientWithCredentials(credentials) {
   return documentClient;
 }
 
-/* This function returns a promise of the configuration required
+exports.handler = function (event, context, callback) {
+  const DESTINATION_ACCOUNT_ID = process.env.DESTINATION_ACCOUNT_ID;
+  const DESTINATION_TABLE_NAME = process.env.DESTINATION_TABLE_NAME;
+  const WRITER_ROLE_NAME = process.env.WRITER_ROLE_NAME;
+
+  /* This function returns a promise of the configuration required
  * to run this function. The current implementation just returns
  * a constant but a DynamoDB or S3 lookup would be easy. */
-function getConfiguration(context) {
-  return Promise.resolve({
-    DestinationTableName: DESTINATION_TABLE_NAME,
-    WriterRoleArn: `arn:aws:iam::${DESTINATION_ACCOUNT_ID}:role/${WRITER_ROLE_NAME}`
-  });
-}
+  function getConfiguration() {
+    return Promise.resolve({
+      DestinationTableName: DESTINATION_TABLE_NAME,
+      WriterRoleArn: `arn:aws:iam::${DESTINATION_ACCOUNT_ID}:role/${WRITER_ROLE_NAME}`
+    });
+  }
 
-exports.handler = function (event, context, callback) {
   let succeed = x => callback(null, x);
   let fail = x => callback(x);
 
-return getConfiguration(context).then(config =>
- {
-  function getAuditWriterCredentials() {
-    let sts = new AWS.STS({ apiVersion: '2011-06-15' });
-    let params = {
-      RoleArn: config.WriterRoleArn,
-      RoleSessionName: uuid(),
-      DurationSeconds: 900
-    };
-    return new Promise(function (resolve, reject) {
-      sts.assumeRole(params, function (error, data) {
-        if (error) {
-          reject(error);
-        } else {
-          let c = data.Credentials;
-          resolve(new AWS.Credentials({
-            accessKeyId: c.AccessKeyId,
-            secretAccessKey: c.SecretAccessKey,
-            sessionToken: c.SessionToken}));
-        }
-      });
-    });
-  }
-
-  let destinationTableName = config.DestinationTableName;
-
-   function writeItems(dynamodb, items) {
-    let request = { RequestItems: {} };
-    request.RequestItems[destinationTableName] = items;
-    return new Promise(function (resolve, reject) {
-      dynamodb.batchWrite(request, function (error, data) {
-        if (error) {
-          reject(error);
-        } else {
-          let unprocessed = data.UnprocessedItems[destinationTableName];
-          if (unprocessed) {
-            console.log('%d items remain to precess', unprocessed.length);
-            resolve(writeItems(dynamodb, unprocessed));
+  return getConfiguration(context).then(config => {
+    function getAuditWriterCredentials() {
+      let sts = new AWS.STS({ apiVersion: '2011-06-15' });
+      let params = {
+        RoleArn: config.WriterRoleArn,
+        RoleSessionName: uuid(),
+        DurationSeconds: 900
+      };
+      return new Promise(function (resolve, reject) {
+        sts.assumeRole(params, function (error, data) {
+          if (error) {
+            reject(error);
           } else {
-            resolve(`${auditItems.length} audit record written.`);
+            let c = data.Credentials;
+            resolve(new AWS.Credentials({
+              accessKeyId: c.AccessKeyId,
+              secretAccessKey: c.SecretAccessKey,
+              sessionToken: c.SessionToken
+            }));
           }
-        }
+        });
       });
-    });
-  }
+    }
 
-  console.log(`Received ${event.Records.length} records from dynamo streams.`);
+    let destinationTableName = config.DestinationTableName;
 
-  var auditItems = getAllAuditItems(event);
-  if (auditItems.length === 0) {
-    succeed("No audit items found to write.");
-    return;
-  }
+    function writeItems(dynamodb, items) {
+      let request = { RequestItems: {} };
+      request.RequestItems[destinationTableName] = items;
+      return new Promise(function (resolve, reject) {
+        dynamodb.batchWrite(request, function (error, data) {
+          if (error) {
+            reject(error);
+          } else {
+            let unprocessed = data.UnprocessedItems[destinationTableName];
+            if (unprocessed) {
+              console.log('%d items remain to precess', unprocessed.length);
+              resolve(writeItems(dynamodb, unprocessed));
+            } else {
+              resolve(`${auditItems.length} audit record written.`);
+            }
+          }
+        });
+      });
+    }
 
-  let items = auditItems.map(asPutRequestItem);
-  return getAuditWriterCredentials()
-    .then(getDynamoClientWithCredentials)
-    .then(dynamodb => writeItems(dynamodb, items))
-    .then(succeed, fail);}, fail);
+    console.log(`Received ${event.Records.length} records from dynamo streams.`);
+
+    var auditItems = getAllAuditItems(event);
+    if (auditItems.length === 0) {
+      succeed("No audit items found to write.");
+      return;
+    }
+
+    let items = auditItems.map(asPutRequestItem);
+    return getAuditWriterCredentials()
+      .then(getDynamoClientWithCredentials)
+      .then(dynamodb => writeItems(dynamodb, items))
+      .then(succeed, fail);
+  }, fail);
 };

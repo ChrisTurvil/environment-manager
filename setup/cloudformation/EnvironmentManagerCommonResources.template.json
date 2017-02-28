@@ -519,6 +519,15 @@
                     "S3Key": "EnvironmentManager/InfraEnvironmentManagerAudit.zip"
                 },
                 "Description": "This function responds to a DynamoDB stream event by writing the value of each record before and after the change to an audit log.",
+                "Environment": {
+                    "Variables": {
+                        "DESTINATION_ACCOUNT_ID": {
+                            "ref": "pMasterAccountId"
+                        },
+                        "DESTINATION_TABLE_NAME": "InfraChangeAudit",
+                        "WRITER_ROLE_NAME": "roleInfraEnvironmentManagerAuditWriter"
+                    }
+                },
                 "FunctionName": "InfraEnvironmentManagerAudit",
                 "Handler": "index.handler",
                 "MemorySize": 128,
