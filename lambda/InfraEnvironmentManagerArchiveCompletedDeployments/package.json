@@ -1,0 +1,30 @@
+{
+  "name": "infra-environment-manager-archive-completed-deployments",
+  "version": "1.0.0",
+  "description": "Archive completed deployments",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "aws-sdk": "^2.22.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.16.1"
+  },
+  "eslintConfig": {
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
+    "rules": {
+      "no-console": 0
+    }
+  }
+}

@@ -1414,6 +1414,106 @@
                 ],
                 "RoleName": "roleInfraAsgScale"
             }
+        },
+        "lambdaInfraEnvironmentManagerArchiveCompletedDeployments": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "pLambdaFunctionBucket"
+                    },
+                    "S3Key": "EnvironmentManager/InfraEnvironmentManagerArchiveCompletedDeployments.zip"
+                },
+                "Description": "This function moves each completed deployment record to an archive table.",
+                "FunctionName": "InfraEnvironmentManagerArchiveCompletedDeployments",
+                "Handler": "index.handler",
+                "MemorySize": 128,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "roleInfraEnvironmentManagerArchiveCompletedDeployments",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "nodejs4.3",
+                "Timeout": 5
+            }
+        },
+        "roleInfraEnvironmentManagerArchiveCompletedDeployments": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "roleInfraEnvironmentManagerArchiveCompletedDeploymentsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:GetRecords",
+                                        "dynamodb:GetShardIterator",
+                                        "dynamodb:DescribeStream",
+                                        "dynamodb:ListStreams"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::GetAtt": [
+                                                "ConfigDeploymentExecutionStatus",
+                                                "StreamArn"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:UpdateItem"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Ref": "ConfigCompletedDeployments"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "archiveCompletedDeployments": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "Properties": {
+                "BatchSize": 25,
+                "Enabled": true,
+                "EventSourceArn": {
+                    "Fn::GetAtt": [
+                        "ConfigDeploymentExecutionStatus",
+                        "StreamArn"
+                    ]
+                },
+                "FunctionName": {
+                    "Ref": "lambdaInfraEnvironmentManagerArchiveCompletedDeployments"
+                },
+                "StartingPosition": "LATEST"
+            }
         }
     },
     "Outputs": {}
