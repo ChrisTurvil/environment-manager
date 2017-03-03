@@ -35,10 +35,8 @@ var Stringify = {
   }
 };
 
-var MasterAccount = new AwsAccount('prod', 499033042897); 
-
-var tables = [
-  new DynamoTable('InfraChangeAudit',        MasterAccount, Stringify.defaultDynamoTableContent),
+var tables = awsAccountNumber => [
+  new DynamoTable('InfraChangeAudit', new AwsAccount('prod', awsAccountNumber), Stringify.defaultDynamoTableContent),
 ];
 
 module.exports = tables;
