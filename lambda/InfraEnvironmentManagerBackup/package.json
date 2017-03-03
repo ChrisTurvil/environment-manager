@@ -7,5 +7,25 @@
   "license": "ISC",
   "dependencies": {
     "async": "^1.5.2"
+  },
+  "eslintConfig": {
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
+    "rules": {
+      "no-console": 0
+    }
+  },
+  "devDependencies": {
+    "mocha": "^3.2.0",
+    "should": "^11.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
