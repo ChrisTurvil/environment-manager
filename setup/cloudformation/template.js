@@ -1,12 +1,15 @@
 'use strict';
 
-function streamArn(tableName) {
-    return {
-        'Fn::GetAtt': [
-            tableName,
-            'StreamArn'
-        ]
-    };
+function getAtt(attribute, object) {
+    return { 'Fn::GetAtt': [object, attribute] };
+}
+
+function ref(name) {
+    return { Ref: name };
+}
+
+function sub(str) {
+    return { 'Fn::Sub': str };
 }
 
 function triggerAll(functionName, sourceArn) {
@@ -49,6 +52,8 @@ function dependsOnSeq(resources) {
 
 module.exports = {
     dependsOnSeq,
-    streamArn,
+    getAtt,
+    ref,
+    sub,
     triggerAll
 }
