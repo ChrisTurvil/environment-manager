@@ -1,5 +1,7 @@
 'use strict';
 
+const R = require('ramda');
+
 function getAtt(attribute, object) {
     return { 'Fn::GetAtt': [object, attribute] };
 }
@@ -10,21 +12,6 @@ function ref(name) {
 
 function sub(str) {
     return { 'Fn::Sub': str };
-}
-
-function triggerAll(functionName, sourceArn) {
-    return {
-        "Type": "AWS::Lambda::EventSourceMapping",
-        "Properties": {
-            "BatchSize": 25,
-            "Enabled": true,
-            "EventSourceArn": sourceArn,
-            "FunctionName": {
-                "Ref": functionName
-            },
-            "StartingPosition": "LATEST"
-        }
-    }
 }
 
 function dependsOnSeq(resources) {
@@ -50,10 +37,17 @@ function dependsOnSeq(resources) {
     }
 }
 
+let isExtensionProperty = (v, k) => /^x-/i.test(k)
+
+let getExtensions = R.pickBy(isExtensionProperty);
+
+let removeExtensions = R.pickBy(R.complement(isExtensionProperty));
+
 module.exports = {
     dependsOnSeq,
     getAtt,
+    getExtensions,
     ref,
+    removeExtensions,
     sub,
-    triggerAll
 }

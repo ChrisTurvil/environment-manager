@@ -3,23 +3,23 @@
 module.exports = () => ({
     ConfigEnvironments: {
         keys: { EnvironmentName: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     ConfigServices: {
         keys: { ServiceName: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     ConfigDeploymentMaps: {
         keys: { DeploymentMapName: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     ConfigNotificationSettings: {
         keys: { NotificationSettingsId: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     ConfigEnvironmentTypes: {
         keys: { EnvironmentType: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     InfraAsgIPs: { keys: { AsgName: 'S' } },
     InfraChangeAudit: {
@@ -30,15 +30,15 @@ module.exports = () => ({
     },
     InfraConfigAccounts: {
         keys: { AccountNumber: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     InfraConfigClusters: {
         keys: { ClusterName: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     InfraConfigPermissions: {
         keys: { Name: 'S' },
-        features: { audit: true }
+        'x-audit': true
     },
     InfraEnvManagerSessions: { keys: { UserName: 'S' } },
     InfraOpsEnvironment: { keys: { EnvironmentName: 'S' } },
@@ -47,7 +47,7 @@ module.exports = () => ({
         indices: [
             { keys: { LoadBalancerGroup: 'S' } }
         ],
-        features: { audit: true }
+        'x-audit': true
     },
     InfraConfigLBUpstream: {
         name: 'InfraConfigLBUpstream',
@@ -57,6 +57,6 @@ module.exports = () => ({
             { keys: { Environment: 'S', Key: 'S' } },
             { keys: { LoadBalancerGroup: 'S' } }
         ],
-        features: { audit: true }
+        'x-audit': true
     }
 });

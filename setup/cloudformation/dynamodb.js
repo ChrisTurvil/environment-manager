@@ -1,10 +1,17 @@
 'use strict';
 
-let { getAtt, sub } = require('./template');
+const R = require('ramda');
+let { getAtt, getExtensions, sub } = require('./template');
+
+const DEFAULT_CAPACITY = [10, 5];
 
 let streamArn = getAtt.bind(null, 'StreamArn');
 
-function table({ name, keys, capacity = [10, 5], indices = [] }) {
+let indexName = (keys) => [...Object.keys(keys), 'index'].join('-');
+
+function table(spec) {
+    let { name, keys, capacity = DEFAULT_CAPACITY, indices = [] } = spec
+    let extensions = getExtensions(spec);
 
     function attributeDefinitions(attributeSets) {
         let kset = new Set(attributeSets.map(Object.keys).reduce((acc, nxt) => [...nxt, ...acc], []));
@@ -33,10 +40,10 @@ function table({ name, keys, capacity = [10, 5], indices = [] }) {
     }
 
     function globalSecondaryIndexes(indexes) {
-        function globalSecondaryIndex({ keys, capacity = [10, 5] }) {
+        function globalSecondaryIndex({ keys, capacity = DEFAULT_CAPACITY }) {
             let [ReadCapacityUnits, WriteCapacityUnits] = capacity;
             return {
-                IndexName: [...Object.keys(keys), 'index'].join('-'),
+                IndexName: indexName(keys),
                 KeySchema: keySchema(keys),
                 Projection: { ProjectionType: 'ALL' },
                 ProvisionedThroughput: {
@@ -58,27 +65,28 @@ function table({ name, keys, capacity = [10, 5], indices = [] }) {
 
     return (() => {
         let [ReadCapacityUnits, WriteCapacityUnits] = capacity;
-        return {
-            Type: "AWS::DynamoDB::Table",
-            Properties: Object.assign(
-                {
-                    AttributeDefinitions: attributeDefinitions([keys, ...indices.map(x => x.keys)]),
-                    KeySchema: keySchema(keys),
-                    ProvisionedThroughput: {
-                        ReadCapacityUnits,
-                        WriteCapacityUnits
+        return Object.assign(
+            extensions,
+            {
+                Type: "AWS::DynamoDB::Table",
+                Properties: Object.assign(
+                    {
+                        AttributeDefinitions: attributeDefinitions([keys, ...indices.map(x => x.keys)]),
+                        KeySchema: keySchema(keys),
+                        ProvisionedThroughput: {
+                            ReadCapacityUnits,
+                            WriteCapacityUnits
+                        },
+                        StreamSpecification: {
+                            StreamViewType: "NEW_AND_OLD_IMAGES"
+                        },
                     },
-                    StreamSpecification: {
-                        StreamViewType: "NEW_AND_OLD_IMAGES"
-                    },
-                },
-                tableName(name),
-                globalSecondaryIndexes(indices)
-            )
-        }
+                    tableName(name),
+                    globalSecondaryIndexes(indices)
+                )
+            })
     })();
 }
-
 
 module.exports = {
     streamArn,
