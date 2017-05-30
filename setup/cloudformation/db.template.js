@@ -39,72 +39,6 @@ let tableOutputsFrom = R.mapObjIndexed((_, tableName) => ({
 
 let resources = Object.assign(
     {
-        roleInfraEnvironmentManagerAudit: {
-            Type: "AWS::IAM::Role",
-            Properties: {
-                AssumeRolePolicyDocument: {
-                    Version: "2012-10-17",
-                    Statement: [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                ManagedPolicyArns: [
-                    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-                ],
-                Policies: [
-                    {
-                        PolicyName: "roleInfraEnvironmentManagerAuditPolicy",
-                        PolicyDocument: {
-                            Version: "2012-10-17",
-                            Statement: [
-                                {
-                                    Effect: "Allow",
-                                    Action: [
-                                        "dynamodb:GetRecords",
-                                        "dynamodb:GetShardIterator",
-                                        "dynamodb:DescribeStream",
-                                        "dynamodb:ListStreams"
-                                    ],
-                                    Resource: R.pipe(
-                                        R.toPairs,
-                                        R.filter(R.path([1, 'features', 'audit'])),
-                                        R.map(([tableName]) => streamArn(tableName)))(tables)
-                                },
-                                {
-                                    Effect: "Allow",
-                                    Action: [
-                                        "dynamodb:BatchWriteItem",
-                                        "dynamodb:PutItem"
-                                    ],
-                                    Resource: [
-                                        ref('InfraChangeAudit')
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        lambdaInfraEnvironmentManagerAudit: {
-            Type: "AWS::Lambda::Function",
-            Properties: {
-                Code: "./lambda/InfraEnvironmentManagerAudit/infra-environment-manager-audit.zip",
-                Description: "This function responds to a DynamoDB stream event by writing the value of each record before and after the change to an audit log.",
-                FunctionName: "InfraEnvironmentManagerAudit",
-                Handler: "index.handler",
-                MemorySize: 128,
-                Role: getAtt('Arn', 'roleInfraEnvironmentManagerAudit'),
-                Runtime: "nodejs6.10",
-                Timeout: 3
-            }
-        },
         lambdaInfraAsgScale: {
             Type: "AWS::Lambda::Function",
             Properties: {
@@ -276,11 +210,6 @@ module.exports = function () {
         AWSTemplateFormatVersion: "2010-09-09",
         Description: "Environment Manager Core Database Resources",
         Parameters: {
-            pMasterAccountId: {
-                Type: "String",
-                Description: "Master AWS account ID",
-                AllowedPattern: "[0-9]{12}"
-            },
             pAlertSNSTopic: {
                 Type: "String",
                 Description: "SNS Topic ARN for lambda alerts."

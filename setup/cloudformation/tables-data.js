@@ -9,6 +9,15 @@ module.exports = () => ({
         keys: { ServiceName: 'S' },
         'x-audit': true
     },
+    ConfigDeploymentExecutionStatus: {
+        keys: { DeploymentID: 'S' }
+    },
+    ConfigCompletedDeployments: {
+        keys: { DeploymentID: 'S' },
+        indices: [
+            { keys: { StartDate: 'S', StartTimestamp: 'S' } }
+        ]
+    },
     ConfigDeploymentMaps: {
         keys: { DeploymentMapName: 'S' },
         'x-audit': true

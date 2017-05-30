@@ -3,6 +3,7 @@
 const test = require('tape');
 const {
     dependsOnSeq,
+    follow,
     getAtt,
     getExtensions,
     ref,
@@ -53,5 +54,37 @@ test('template getExtensions', (t) => {
         'x-a': true,
         'X-B': { schedule: 'daily' }
     });
+    t.end();
+});
+
+test('template follow: looks up a resource from a name', (t) => {
+    let r = 'MyResource';
+    let template = { Resources: { MyResource: { K: 'V' } } };
+    let result = follow(r, template);
+    t.deepEqual(result, ['MyResource', {K: 'V'}] );
+    t.end();
+});
+
+test('template follow: looks up a resource from a Ref', (t) => {
+    let r = { Ref: 'MyResource' };
+    let template = { Resources: { MyResource: { K: 'V' } } };
+    let result = follow(r, template);
+    t.deepEqual(result, ['MyResource', {K: 'V'}] );
+    t.end();
+});
+
+test('template follow: looks up a resource from a Fn::GetAtt', (t) => {
+    let r = { 'Fn::GetAtt': ['MyResource', 'Arn'] };
+    let template = { Resources: { MyResource: { K: 'V' } } };
+    let result = follow(r, template);
+    t.deepEqual(result, ['MyResource', {K: 'V'}] );
+    t.end();
+});
+
+test('template follow: looks up a parameter from a name', (t) => {
+    let r = 'MyResource';
+    let template = { Parameters: { MyResource: { K: 'V' } } };
+    let result = follow(r, template);
+    t.deepEqual(result, ['MyResource', {K: 'V'}] );
     t.end();
 });
