@@ -6,10 +6,7 @@ let {
     triggerAll: trigger
 } = require('./template');
 
-module.exports = function ({ managedAccounts }) {
-
-    managedAccounts = Array.from(new Set(managedAccounts || []));
-
+module.exports = function () {
     return {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Description": "Environment Manager Resources",
@@ -1116,6 +1113,18 @@ module.exports = function ({ managedAccounts }) {
                                         {
                                             "Effect": "Allow",
                                             "Action": [
+                                                "dynamodb:BatchWriteItem",
+                                                "dynamodb:PutItem"
+                                            ],
+                                            "Resource": [
+                                                {
+                                                    "Ref": "InfraChangeAudit"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "Effect": "Allow",
+                                            "Action": [
                                                 "dynamodb:GetRecords",
                                                 "dynamodb:GetShardIterator",
                                                 "dynamodb:DescribeStream",
@@ -1133,15 +1142,6 @@ module.exports = function ({ managedAccounts }) {
                                                 'InfraConfigAccounts',
                                                 'ConfigNotificationSettings'
                                             ].map(streamArn)
-                                        },
-                                        {
-                                            "Action": "sts:AssumeRole",
-                                            "Effect": "Allow",
-                                            "Resource": [
-                                                {
-                                                    "Fn::Sub": "arn:aws:iam::${pMasterAccountId}:role/roleInfraEnvironmentManagerAuditWriter"
-                                                }
-                                            ]
                                         }
                                     ]
                                 }
@@ -1159,54 +1159,6 @@ module.exports = function ({ managedAccounts }) {
                 "auditTriggerConfigDeploymentMaps": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigDeploymentMaps')),
                 "auditTriggerInfraConfigAccounts": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigAccounts')),
                 "auditTriggerConfigNotificationSettings": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigNotificationSettings')),
-                "roleInfraEnvironmentManagerAuditWriter": {
-                    "Type": "AWS::IAM::Role",
-                    "Properties": {
-                        "AssumeRolePolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Sid": "",
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "AWS": [
-                                            {
-                                                "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
-                                            }
-                                        ].concat(managedAccounts.map(accountNumber => `arn:aws:iam::${accountNumber}:root`))
-                                    },
-                                    "Action": "sts:AssumeRole"
-                                }
-                            ]
-                        },
-                        "ManagedPolicyArns": [
-                            "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-                        ],
-                        "Policies": [
-                            {
-                                "PolicyName": "roleInfraEnvironmentManagerAuditWriterPolicy",
-                                "PolicyDocument": {
-                                    "Version": "2012-10-17",
-                                    "Statement": [
-                                        {
-                                            "Effect": "Allow",
-                                            "Action": [
-                                                "dynamodb:BatchWriteItem",
-                                                "dynamodb:PutItem"
-                                            ],
-                                            "Resource": [
-                                                {
-                                                    "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InfraChangeAudit}"
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        ],
-                        "RoleName": "roleInfraEnvironmentManagerAuditWriter"
-                    }
-                },
                 "lambdaInfraAsgScale": {
                     "Type": "AWS::Lambda::Function",
                     "Properties": {
