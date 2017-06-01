@@ -31,12 +31,6 @@ module.exports = () => ({
         'x-audit': true
     },
     InfraAsgIPs: { keys: { AsgName: 'S' } },
-    InfraChangeAudit: {
-        keys: { AuditID: 'S' },
-        indices: [
-            { keys: { Date: 'S', ISOTimestamp: 'S' } }
-        ]
-    },
     InfraConfigAccounts: {
         keys: { AccountNumber: 'S' },
         'x-audit': true

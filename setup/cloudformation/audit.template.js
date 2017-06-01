@@ -1,20 +1,21 @@
 'use strict';
 
 const R = require('ramda');
+let { table } = require('./dynamodb');
 let { trigger } = require('./lambda');
 let { follow, getAtt, ref } = require('./template');
 
 let parametersFrom = R.pipe(
-    R.map(({ outputName, resourceName }) => [outputName, { 
+    R.map(({ outputName, resourceName }) => [outputName, {
         Type: 'String',
         Description: `The ARN of the DynamoDB stream of ${resourceName}`
-     }]),
+    }]),
     R.fromPairs
 );
 
 let auditTriggersFrom = R.pipe(
     R.map(({ outputName, resourceName }) =>
-    [`${resourceName}-AuditTrigger`, trigger('lambdaInfraEnvironmentManagerAudit', ref(outputName))]),
+        [`${resourceName}-AuditTrigger`, trigger('lambdaInfraEnvironmentManagerAudit', ref(outputName))]),
     R.fromPairs
 );
 
@@ -27,7 +28,7 @@ module.exports = function (template) {
             let [resourceName, definition] = follow(Value, template);
             return { outputName, resourceName, definition };
         }),
-        R.filter(({ definition: { Type, 'x-audit': audit }}) => Type === 'AWS::DynamoDB::Table' && audit)
+        R.filter(({ definition: { Type, 'x-audit': audit } }) => Type === 'AWS::DynamoDB::Table' && audit)
     )(template);
 
     return {
@@ -36,14 +37,18 @@ module.exports = function (template) {
         Parameters: Object.assign(
             parametersFrom(resourcesToAudit),
             {
-            pAlertSNSTopic: {
-                Type: "String",
-                Description: "SNS Topic ARN for lambda alerts."
-            }
-        }),
+                pAlertSNSTopic: {
+                    Type: "String",
+                    Description: "SNS Topic ARN for lambda alerts."
+                }
+            }),
         Resources: Object.assign(
             auditTriggersFrom(resourcesToAudit),
             {
+                InfraChangeAudit: table({
+                    keys: { AuditID: 'S' },
+                    indices: [{ keys: { Date: 'S', ISOTimestamp: 'S' } }]
+                }),
                 roleInfraEnvironmentManagerAudit: {
                     Type: "AWS::IAM::Role",
                     Properties: {
@@ -93,7 +98,7 @@ module.exports = function (template) {
                             }
                         ]
                     }
-                    },
+                },
                 lambdaInfraEnvironmentManagerAudit: {
                     Type: "AWS::Lambda::Function",
                     Properties: {
@@ -110,6 +115,6 @@ module.exports = function (template) {
             }),
         Outputs: {}
     };
-    
+
 };
 
