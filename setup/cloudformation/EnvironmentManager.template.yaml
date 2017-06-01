@@ -65,6 +65,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        pResourcePrefix: !Ref pResourcePrefix
         pAlertSNSTopic: !If [AlertToInternalTopic, !Ref InternalAlertTopic, !Ref pExternalAlertTopic]
         pMasterAccountId: !Ref "AWS::AccountId"
       TemplateURL: ./EnvironmentManagerCommonResources.template.json
