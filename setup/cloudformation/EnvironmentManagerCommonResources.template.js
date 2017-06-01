@@ -11,6 +11,11 @@ module.exports = function () {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Description": "Environment Manager Resources",
         "Parameters": {
+            "pResourcePrefix": {
+                "Type": "String",
+                "Description": "Prefix for named AWS resources",
+                "Default": ""
+            },
             "pMasterAccountId": {
                 "Type": "String",
                 "Description": "Master AWS account ID",
@@ -44,7 +49,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigEnvironments"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigEnvironments" }
                 }
             },
             "AlertReadCapacityConfigEnvironments": {
@@ -115,7 +120,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigServices"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigServices" }
                 }
             },
             "AlertReadCapacityConfigServices": {
@@ -178,7 +183,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigDeploymentMaps"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigDeploymentMaps" }
                 }
             },
             "AlertReadCapacityConfigDeploymentMaps": {
@@ -271,7 +276,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraConfigLBSettings"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigLBSettings" }
                 }
             },
             "AlertReadCapacityInfraConfigLBSettings": {
@@ -416,7 +421,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraConfigLBUpstream"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigLBUpstream" }
                 }
             },
             "AlertReadCapacityInfraConfigLBUpstream": {
@@ -479,7 +484,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigNotificationSettings"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigNotificationSettings" }
                 }
             },
             "AlertReadCapacityConfigNotificationSettings": {
@@ -542,7 +547,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigEnvironmentTypes"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigEnvironmentTypes" }
                 }
             },
             "AlertReadCapacityConfigEnvironmentTypes": {
@@ -602,7 +607,7 @@ module.exports = function () {
                         "ReadCapacityUnits": 10,
                         "WriteCapacityUnits": 2
                     },
-                    "TableName": "InfraAsgIPs"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraAsgIPs" }
                 }
             },
             "AlertReadCapacityInfraAsgIPs": {
@@ -692,7 +697,7 @@ module.exports = function () {
                         "ReadCapacityUnits": 20,
                         "WriteCapacityUnits": 5
                     },
-                    "TableName": "InfraChangeAudit"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraChangeAudit" }
                 }
             },
             "AlertReadCapacityInfraChangeAudit": {
@@ -755,7 +760,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraConfigAccounts"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigAccounts" }
                 }
             },
             "AlertReadCapacityInfraConfigAccounts": {
@@ -818,7 +823,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraConfigClusters"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigClusters" }
                 }
             },
             "AlertReadCapacityInfraConfigClusters": {
@@ -881,7 +886,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraConfigPermissions"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigPermissions" }
                 }
             },
             "AlertReadCapacityInfraConfigPermissions": {
@@ -941,7 +946,7 @@ module.exports = function () {
                         "ReadCapacityUnits": 10,
                         "WriteCapacityUnits": 2
                     },
-                    "TableName": "InfraEnvManagerSessions"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraEnvManagerSessions" }
                 }
             },
             "AlertReadCapacityInfraEnvManagerSessions": {
@@ -1004,7 +1009,7 @@ module.exports = function () {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "InfraOpsEnvironment"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}InfraOpsEnvironment" }
                 }
             },
             "AlertReadCapacityInfraOpsEnvironment": {

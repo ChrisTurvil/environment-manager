@@ -2,6 +2,10 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Publication of Environment Manager Change Events
 Parameters:
+  pResourcePrefix:
+    Type: String
+    Description: "Prefix for named AWS resources"
+    Default: ""
   pConfigurationBucket:
     Type: String
     Default: ""
