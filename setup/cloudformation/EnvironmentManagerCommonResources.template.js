@@ -255,7 +255,7 @@ module.exports = function ({ managedAccounts }) {
                     "Threshold": 1.6
                 }
             },
-            "ConfigLBSettings": {
+            "InfraConfigLBSettings": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
                     "AttributeDefinitions": [
@@ -264,8 +264,30 @@ module.exports = function ({ managedAccounts }) {
                             "AttributeType": "S"
                         },
                         {
+                            "AttributeName": "LoadBalancerGroup",
+                            "AttributeType": "S"
+                        },
+                        {
                             "AttributeName": "VHostName",
                             "AttributeType": "S"
+                        }
+                    ],
+                    "GlobalSecondaryIndexes": [
+                        {
+                            "IndexName": "LoadBalancerGroup-index",
+                            "KeySchema": [
+                                {
+                                    "AttributeName": "LoadBalancerGroup",
+                                    "KeyType": "HASH"
+                                }
+                            ],
+                            "Projection": {
+                                "ProjectionType": "ALL"
+                            },
+                            "ProvisionedThroughput": {
+                                "ReadCapacityUnits": 10,
+                                "WriteCapacityUnits": 2
+                            }
                         }
                     ],
                     "KeySchema": [
@@ -285,18 +307,18 @@ module.exports = function ({ managedAccounts }) {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigLBSettings"
+                    "TableName": "InfraConfigLBSettings"
                 }
             },
-            "AlertReadCapacityConfigLBSettings": {
+            "AlertReadCapacityInfraConfigLBSettings": {
                 "Type": "AWS::CloudWatch::Alarm",
                 "Properties": {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigLBSettings",
-                    "AlarmName": "AlertReadCapacityConfigLBSettings",
+                    "AlarmDescription": "ReadCapacityInfraConfigLBSettings",
+                    "AlarmName": "AlertReadCapacityInfraConfigLBSettings",
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigLBSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBSettings" }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -307,15 +329,15 @@ module.exports = function ({ managedAccounts }) {
                     "Threshold": 8
                 }
             },
-            "AlertWriteCapacityConfigLBSettings": {
+            "AlertWriteCapacityInfraConfigLBSettings": {
                 "Type": "AWS::CloudWatch::Alarm",
                 "Properties": {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigLBSettings",
-                    "AlarmName": "AlertWriteCapacityConfigLBSettings",
+                    "AlarmDescription": "WriteCapacityInfraConfigLBSettings",
+                    "AlarmName": "AlertWriteCapacityInfraConfigLBSettings",
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigLBSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBSettings" }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -326,18 +348,100 @@ module.exports = function ({ managedAccounts }) {
                     "Threshold": 1.6
                 }
             },
-            "ConfigLBUpstream": {
+            "InfraConfigLBUpstream": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
-                            "AttributeName": "key",
+                            "AttributeName": "AccountId",
                             "AttributeType": "S"
+                        },
+                        {
+                            "AttributeName": "Environment",
+                            "AttributeType": "S"
+                        },
+                        {
+                            "AttributeName": "Key",
+                            "AttributeType": "S"
+                        },
+                        {
+                            "AttributeName": "LoadBalancerGroup",
+                            "AttributeType": "S"
+                        },
+                        {
+                            "AttributeName": "Service",
+                            "AttributeType": "S"
+                        },
+                        {
+                            "AttributeName": "Upstream",
+                            "AttributeType": "S"
+                        }
+                    ],
+                    "GlobalSecondaryIndexes": [
+                        {
+                            "IndexName": "AccountId-index",
+                            "KeySchema": [
+                                {
+                                    "AttributeName": "AccountId",
+                                    "KeyType": "HASH"
+                                },
+                                {
+                                    "AttributeName": "Key",
+                                    "KeyType": "RANGE"
+                                }
+                            ],
+                            "Projection": {
+                                "ProjectionType": "ALL"
+                            },
+                            "ProvisionedThroughput": {
+                                "ReadCapacityUnits": 10,
+                                "WriteCapacityUnits": 2
+                            }
+                        },
+                        {
+                            "IndexName": "Environment-Key-index",
+                            "KeySchema": [
+                                {
+                                    "AttributeName": "Environment",
+                                    "KeyType": "HASH"
+                                },
+                                {
+                                    "AttributeName": "Key",
+                                    "KeyType": "RANGE"
+                                }
+                            ],
+                            "Projection": {
+                                "ProjectionType": "ALL"
+                            },
+                            "ProvisionedThroughput": {
+                                "ReadCapacityUnits": 10,
+                                "WriteCapacityUnits": 2
+                            }
+                        },
+                        {
+                            "IndexName": "LoadBalancerGroup-index",
+                            "KeySchema": [
+                                {
+                                    "AttributeName": "LoadBalancerGroup",
+                                    "KeyType": "HASH"
+                                },
+                                {
+                                    "AttributeName": "Key",
+                                    "KeyType": "RANGE"
+                                }
+                            ],
+                            "Projection": {
+                                "ProjectionType": "ALL"
+                            },
+                            "ProvisionedThroughput": {
+                                "ReadCapacityUnits": 10,
+                                "WriteCapacityUnits": 2
+                            }
                         }
                     ],
                     "KeySchema": [
                         {
-                            "AttributeName": "key",
+                            "AttributeName": "Key",
                             "KeyType": "HASH"
                         }
                     ],
@@ -348,18 +452,18 @@ module.exports = function ({ managedAccounts }) {
                     "StreamSpecification": {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
-                    "TableName": "ConfigLBUpstream"
+                    "TableName": "InfraConfigLBUpstream"
                 }
             },
-            "AlertReadCapacityConfigLBUpstream": {
+            "AlertReadCapacityInfraConfigLBUpstream": {
                 "Type": "AWS::CloudWatch::Alarm",
                 "Properties": {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigLBUpstream",
-                    "AlarmName": "AlertReadCapacityConfigLBUpstream",
+                    "AlarmDescription": "ReadCapacityInfraConfigLBUpstream",
+                    "AlarmName": "AlertReadCapacityInfraConfigLBUpstream",
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigLBUpstream" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBUpstream" }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -370,15 +474,15 @@ module.exports = function ({ managedAccounts }) {
                     "Threshold": 8
                 }
             },
-            "AlertWriteCapacityConfigLBUpstream": {
+            "AlertWriteCapacityInfraConfigLBUpstream": {
                 "Type": "AWS::CloudWatch::Alarm",
                 "Properties": {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigLBUpstream",
-                    "AlarmName": "AlertWriteCapacityConfigLBUpstream",
+                    "AlarmDescription": "WriteCapacityInfraConfigLBUpstream",
+                    "AlarmName": "AlertWriteCapacityInfraConfigLBUpstream",
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigLBUpstream" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBUpstream" }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -1059,8 +1163,8 @@ module.exports = function ({ managedAccounts }) {
                                                 "dynamodb:ListStreams"
                                             ],
                                             "Resource": [
-                                                'ConfigLBSettings',
-                                                'ConfigLBUpstream',
+                                                'InfraConfigLBSettings',
+                                                'InfraConfigLBUpstream',
                                                 'ConfigServices',
                                                 'InfraConfigClusters',
                                                 'ConfigEnvironments',
@@ -1086,8 +1190,8 @@ module.exports = function ({ managedAccounts }) {
                         ]
                     }
                 },
-                "auditTriggerConfigLBSettings": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigLBSettings')),
-                "auditTriggerConfigLBUpstream": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigLBUpstream')),
+                "auditTriggerInfraConfigLBSettings": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBSettings')),
+                "auditTriggerInfraConfigLBUpstream": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBUpstream')),
                 "auditTriggerConfigServices": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigServices')),
                 "auditTriggerInfraConfigClusters": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigClusters')),
                 "auditTriggerConfigEnvironments": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigEnvironments')),
