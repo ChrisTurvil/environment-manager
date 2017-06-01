@@ -1083,7 +1083,7 @@ module.exports = function () {
                         "Dimensions": [
                             {
                                 "Name": "FunctionName",
-                                "Value": "InfraEnvironmentManagerAudit"
+                                "Value": { "Ref": "InfraEnvironmentManagerAudit" }
                             }
                         ],
                         "Period": 60,
@@ -1196,7 +1196,7 @@ module.exports = function () {
                         "Dimensions": [
                             {
                                 "Name": "FunctionName",
-                                "Value": "InfraAsgScale"
+                                "Value": { "Ref": "InfraAsgScale" }
                             }
                         ],
                         "Period": 60,
