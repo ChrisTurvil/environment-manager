@@ -1065,7 +1065,7 @@ module.exports = function () {
                                 "Arn"
                             ]
                         },
-                        "Runtime": "nodejs4.3",
+                        "Runtime": "nodejs6.10",
                         "Timeout": 3
                     }
                 },
@@ -1178,7 +1178,7 @@ module.exports = function () {
                                 "Arn"
                             ]
                         },
-                        "Runtime": "nodejs4.3",
+                        "Runtime": "nodejs6.10",
                         "Timeout": 30
                     }
                 },
