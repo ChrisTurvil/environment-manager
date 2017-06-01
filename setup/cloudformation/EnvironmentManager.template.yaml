@@ -107,6 +107,7 @@ Resources:
       Type: AWS::CloudFormation::Stack
       Properties:
         Parameters:
+          pResourcePrefix: !Ref pResourcePrefix
           pVpcBase: !Ref pVpcBase
           pRedisSubnets: !Join [",", !Ref pRedisSubnets]
         TemplateURL: ./EnvironmentManagerRedisNetwork.template.yaml
