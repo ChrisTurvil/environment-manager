@@ -98,11 +98,9 @@ Resources:
       Type: AWS::CloudFormation::Stack
       Properties:
         Parameters:
-          pAlertSNSTopic: !If [AlertToInternalTopic, !Ref InternalAlertTopic, !Ref pExternalAlertTopic]
           pMasterAccountId: !Ref AWS::AccountId
           pDeploymentLogsBucket: !Ref pDeploymentLogsBucket
           pPackagesBucket: !Ref pPackagesBucket
-          pCreateChildRole: true
         TemplateURL: ./EnvironmentManagerChildResources.template.json
         TimeoutInMinutes: 30
   EnvironmentManagerRedisNetwork:
