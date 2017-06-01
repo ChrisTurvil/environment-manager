@@ -491,13 +491,13 @@ module.exports = function ({ managedAccounts }) {
                                         ],
                                         "Resource": [
                                             {
-                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/Config*"
+                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/${pResourcePrefix}Config*"
                                             },
                                             {
-                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/Infra*"
+                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/${pResourcePrefix}Infra*"
                                             },
                                             {
-                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/Environment*"
+                                                "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/${pResourcePrefix}Environment*"
                                             }
                                         ]
                                     },
@@ -601,10 +601,10 @@ module.exports = function ({ managedAccounts }) {
                                         ],
                                         "Resource": [
                                             {
-                                                "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:footplate*"
+                                                "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:${pResourcePrefix}footplate*"
                                             },
                                             {
-                                                "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:environment*"
+                                                "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:${pResourcePrefix}environment*"
                                             }
                                         ]
                                     }
