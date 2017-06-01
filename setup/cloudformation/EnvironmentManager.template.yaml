@@ -74,6 +74,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        pResourcePrefix: !Ref pResourcePrefix
         pAlertSNSTopic: !If [AlertToInternalTopic, !Ref InternalAlertTopic, !Ref pExternalAlertTopic]
         pConfigurationBucket: !Ref pConfigurationBucket
         pSecretsBucket: !Ref pSecretsBucket

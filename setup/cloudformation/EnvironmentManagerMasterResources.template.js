@@ -7,6 +7,11 @@ module.exports = function ({ managedAccounts }) {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Description": "Environment Manager Resources",
         "Parameters": {
+            "pResourcePrefix": {
+                "Type": "String",
+                "Description": "Prefix for named AWS resources",
+                "Default": ""
+            },
             "pConfigurationBucket": {
                 "Type": "String",
                 "Default": "",
@@ -126,7 +131,7 @@ module.exports = function ({ managedAccounts }) {
                         "ReadCapacityUnits": 10,
                         "WriteCapacityUnits": 2
                     },
-                    "TableName": "ConfigDeploymentExecutionStatus"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigDeploymentExecutionStatus" }
                 }
             },
             "AlertReadCapacityConfigDeploymentExecutionStatus": {
@@ -135,9 +140,9 @@ module.exports = function ({ managedAccounts }) {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
                     "AlarmDescription": "ReadCapacityConfigDeploymentExecutionStatus",
-                    "AlarmName": "AlertReadCapacityConfigDeploymentExecutionStatus",
+                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigDeploymentExecutionStatus" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigDeploymentExecutionStatus" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentExecutionStatus" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -154,9 +159,9 @@ module.exports = function ({ managedAccounts }) {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
                     "AlarmDescription": "WriteCapacityConfigDeploymentExecutionStatus",
-                    "AlarmName": "AlertWriteCapacityConfigDeploymentExecutionStatus",
+                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigDeploymentExecutionStatus" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigDeploymentExecutionStatus" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentExecutionStatus" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -216,7 +221,7 @@ module.exports = function ({ managedAccounts }) {
                         "ReadCapacityUnits": 10,
                         "WriteCapacityUnits": 2
                     },
-                    "TableName": "ConfigCompletedDeployments"
+                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigCompletedDeployments" }
                 }
             },
             "AlertReadCapacityConfigCompletedDeployments": {
@@ -225,9 +230,9 @@ module.exports = function ({ managedAccounts }) {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
                     "AlarmDescription": "ReadCapacityConfigCompletedDeployments",
-                    "AlarmName": "AlertReadCapacityConfigCompletedDeployments",
+                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigCompletedDeployments" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigCompletedDeployments" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigCompletedDeployments" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -244,9 +249,9 @@ module.exports = function ({ managedAccounts }) {
                     "ActionsEnabled": true,
                     "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
                     "AlarmDescription": "WriteCapacityConfigCompletedDeployments",
-                    "AlarmName": "AlertWriteCapacityConfigCompletedDeployments",
+                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigCompletedDeployments" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigCompletedDeployments" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigCompletedDeployments" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -292,7 +297,7 @@ module.exports = function ({ managedAccounts }) {
                         "Timeout": "3",
                         "UnhealthyThreshold": "5"
                     },
-                    "LoadBalancerName": "environmentmanager-elb",
+                    "LoadBalancerName": { "Fn::Sub": "${pResourcePrefix}environmentmanager-elb" },
                     "Listeners": [
                         {
                             "InstancePort": {
@@ -326,7 +331,7 @@ module.exports = function ({ managedAccounts }) {
                     "Tags": [
                         {
                             "Key": "Name",
-                            "Value": "sgInfraEnvironmentManager"
+                            "Value": { "Fn::Sub": "${pResourcePrefix}sgInfraEnvironmentManager" }
                         }
                     ]
                 }
@@ -359,7 +364,7 @@ module.exports = function ({ managedAccounts }) {
                     "Tags": [
                         {
                             "Key": "Name",
-                            "Value": "sgInfraEnvironmentManagerElb"
+                            "Value": { "Fn::Sub": "${pResourcePrefix}sgInfraEnvironmentManagerElb" }
                         }
                     ]
                 }
@@ -607,7 +612,7 @@ module.exports = function ({ managedAccounts }) {
                             }
                         }
                     ],
-                    "RoleName": "roleInfraEnvironmentManager"
+                    "RoleName": {"Fn::Sub": "${pResourcePrefix}roleInfraEnvironmentManager"}
                 }
             },
             "instanceProfileEnvironmentManager": {
