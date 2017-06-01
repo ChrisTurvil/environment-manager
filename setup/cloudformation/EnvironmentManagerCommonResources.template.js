@@ -52,44 +52,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigEnvironments" }
                 }
             },
-            "AlertReadCapacityConfigEnvironments": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "AlertReadCapacityConfigEnvironments",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironments" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigEnvironments": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "AlertWriteCapacityConfigEnvironments",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironments" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "ConfigServices": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -123,44 +85,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigServices" }
                 }
             },
-            "AlertReadCapacityConfigServices": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigServices",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigServices" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigServices": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigServices",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigServices" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "ConfigDeploymentMaps": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -184,44 +108,6 @@ module.exports = function () {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigDeploymentMaps" }
-                }
-            },
-            "AlertReadCapacityConfigDeploymentMaps": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigDeploymentMaps",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigDeploymentMaps" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigDeploymentMaps": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigDeploymentMaps",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigDeploymentMaps" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "InfraConfigLBSettings": {
@@ -277,44 +163,6 @@ module.exports = function () {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigLBSettings" }
-                }
-            },
-            "AlertReadCapacityInfraConfigLBSettings": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraConfigLBSettings",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBSettings" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraConfigLBSettings": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraConfigLBSettings",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBSettings" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "InfraConfigLBUpstream": {
@@ -424,44 +272,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigLBUpstream" }
                 }
             },
-            "AlertReadCapacityInfraConfigLBUpstream": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraConfigLBUpstream",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBUpstream" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraConfigLBUpstream": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraConfigLBUpstream",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBUpstream" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "ConfigNotificationSettings": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -485,44 +295,6 @@ module.exports = function () {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigNotificationSettings" }
-                }
-            },
-            "AlertReadCapacityConfigNotificationSettings": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigNotificationSettings",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigNotificationSettings" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigNotificationSettings": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigNotificationSettings",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigNotificationSettings" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "ConfigEnvironmentTypes": {
@@ -550,44 +322,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigEnvironmentTypes" }
                 }
             },
-            "AlertReadCapacityConfigEnvironmentTypes": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigEnvironmentTypes",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironmentTypes" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigEnvironmentTypes": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigEnvironmentTypes",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironmentTypes" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "InfraAsgIPs": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -608,44 +342,6 @@ module.exports = function () {
                         "WriteCapacityUnits": 2
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraAsgIPs" }
-                }
-            },
-            "AlertReadCapacityInfraAsgIPs": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraAsgIPs",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraAsgIPs" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraAsgIPs": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraAsgIPs",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraAsgIPs" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "InfraChangeAudit": {
@@ -700,44 +396,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraChangeAudit" }
                 }
             },
-            "AlertReadCapacityInfraChangeAudit": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraChangeAudit",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraChangeAudit" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraChangeAudit": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraChangeAudit",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraChangeAudit" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "InfraConfigAccounts": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -761,44 +419,6 @@ module.exports = function () {
                         "StreamViewType": "NEW_AND_OLD_IMAGES"
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigAccounts" }
-                }
-            },
-            "AlertReadCapacityInfraConfigAccounts": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraConfigAccounts",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigAccounts" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraConfigAccounts": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraConfigAccounts",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigAccounts" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "InfraConfigClusters": {
@@ -826,44 +446,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigClusters" }
                 }
             },
-            "AlertReadCapacityInfraConfigClusters": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraConfigClusters",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigClusters" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraConfigClusters": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraConfigClusters",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigClusters" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "InfraConfigPermissions": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -889,44 +471,6 @@ module.exports = function () {
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraConfigPermissions" }
                 }
             },
-            "AlertReadCapacityInfraConfigPermissions": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraConfigPermissions",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigPermissions" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraConfigPermissions": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraConfigPermissions",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigPermissions" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "InfraEnvManagerSessions": {
                 "Type": "AWS::DynamoDB::Table",
                 "Properties": {
@@ -947,44 +491,6 @@ module.exports = function () {
                         "WriteCapacityUnits": 2
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraEnvManagerSessions" }
-                }
-            },
-            "AlertReadCapacityInfraEnvManagerSessions": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraEnvManagerSessions",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraEnvManagerSessions" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraEnvManagerSessions": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraEnvManagerSessions",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraEnvManagerSessions" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
                 }
             },
             "InfraOpsEnvironment": {
@@ -1011,46 +517,540 @@ module.exports = function () {
                     },
                     "TableName": { "Fn::Sub": "${pResourcePrefix}InfraOpsEnvironment" }
                 }
-            },
-            "AlertReadCapacityInfraOpsEnvironment": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityInfraOpsEnvironment",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraOpsEnvironment" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityInfraOpsEnvironment": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityInfraOpsEnvironment",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraOpsEnvironment" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
             }
         }), {
+                "AlertReadCapacityConfigServices": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityConfigServices",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigServices" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityConfigServices": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityConfigServices",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigServices" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityConfigDeploymentMaps": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityConfigDeploymentMaps",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigDeploymentMaps" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityConfigDeploymentMaps": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityConfigDeploymentMaps",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigDeploymentMaps" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraConfigLBSettings": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraConfigLBSettings",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBSettings" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraConfigLBSettings": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraConfigLBSettings",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBSettings" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraConfigLBUpstream": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraConfigLBUpstream",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBUpstream" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraConfigLBUpstream": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraConfigLBUpstream",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBUpstream" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityConfigNotificationSettings": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityConfigNotificationSettings",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigNotificationSettings" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityConfigNotificationSettings": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityConfigNotificationSettings",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigNotificationSettings" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityConfigEnvironmentTypes": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityConfigEnvironmentTypes",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironmentTypes" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityConfigEnvironmentTypes": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityConfigEnvironmentTypes",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironmentTypes" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraAsgIPs": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraAsgIPs",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraAsgIPs" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraAsgIPs": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraAsgIPs",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraAsgIPs" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraChangeAudit": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraChangeAudit",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraChangeAudit" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraChangeAudit": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraChangeAudit",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraChangeAudit" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraConfigAccounts": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraConfigAccounts",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigAccounts" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraConfigAccounts": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraConfigAccounts",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigAccounts" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraConfigClusters": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraConfigClusters",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigClusters" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraConfigClusters": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraConfigClusters",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigClusters" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraConfigPermissions": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraConfigPermissions",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigPermissions" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraConfigPermissions": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraConfigPermissions",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigPermissions" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraEnvManagerSessions": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraEnvManagerSessions",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraEnvManagerSessions" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraEnvManagerSessions": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraEnvManagerSessions",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraEnvManagerSessions" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityInfraOpsEnvironment": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "ReadCapacityInfraOpsEnvironment",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraOpsEnvironment" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityInfraOpsEnvironment": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "WriteCapacityInfraOpsEnvironment",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraOpsEnvironment" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
+                "AlertReadCapacityConfigEnvironments": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "AlertReadCapacityConfigEnvironments",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironments" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedReadCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 8
+                    }
+                },
+                "AlertWriteCapacityConfigEnvironments": {
+                    "Type": "AWS::CloudWatch::Alarm",
+                    "Properties": {
+                        "ActionsEnabled": true,
+                        "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
+                        "AlarmDescription": "AlertWriteCapacityConfigEnvironments",
+                        "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironments" },
+                        "ComparisonOperator": "GreaterThanThreshold",
+                        "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
+                        "EvaluationPeriods": 1,
+                        // "InsufficientDataActions": [""]
+                        "MetricName": "ConsumedWriteCapacityUnits",
+                        "Namespace": "AWS/DynamoDB",
+                        // "OKActions": [""]
+                        "Period": 60,
+                        "Statistic": "Sum",
+                        "Threshold": 1.6
+                    }
+                },
                 "lambdaInfraEnvironmentManagerAudit": {
                     "Type": "AWS::Lambda::Function",
                     "Properties": {
