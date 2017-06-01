@@ -60,7 +60,7 @@ module.exports = function () {
                     "AlarmDescription": "AlertReadCapacityConfigEnvironments",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironments" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigEnvironments" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -79,7 +79,7 @@ module.exports = function () {
                     "AlarmDescription": "AlertWriteCapacityConfigEnvironments",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironments" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigEnvironments" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironments" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -131,7 +131,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityConfigServices",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigServices" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigServices" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -150,7 +150,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityConfigServices",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigServices" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigServices" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigServices" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -194,7 +194,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityConfigDeploymentMaps",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigDeploymentMaps" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigDeploymentMaps" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -213,7 +213,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityConfigDeploymentMaps",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigDeploymentMaps" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigDeploymentMaps" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentMaps" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -287,7 +287,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraConfigLBSettings",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBSettings" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -306,7 +306,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraConfigLBSettings",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBSettings" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBSettings" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -432,7 +432,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraConfigLBUpstream",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigLBUpstream" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBUpstream" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -451,7 +451,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraConfigLBUpstream",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigLBUpstream" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigLBUpstream" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigLBUpstream" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -495,7 +495,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityConfigNotificationSettings",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigNotificationSettings" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigNotificationSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -514,7 +514,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityConfigNotificationSettings",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigNotificationSettings" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigNotificationSettings" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigNotificationSettings" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -558,7 +558,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityConfigEnvironmentTypes",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigEnvironmentTypes" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigEnvironmentTypes" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -577,7 +577,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityConfigEnvironmentTypes",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigEnvironmentTypes" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "ConfigEnvironmentTypes" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigEnvironmentTypes" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -618,7 +618,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraAsgIPs",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraAsgIPs" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraAsgIPs" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -637,7 +637,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraAsgIPs",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraAsgIPs" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraAsgIPs" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraAsgIPs" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -708,7 +708,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraChangeAudit",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraChangeAudit" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraChangeAudit" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -727,7 +727,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraChangeAudit",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraChangeAudit" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraChangeAudit" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraChangeAudit" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -771,7 +771,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraConfigAccounts",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigAccounts" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigAccounts" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -790,7 +790,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraConfigAccounts",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigAccounts" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigAccounts" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigAccounts" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -834,7 +834,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraConfigClusters",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigClusters" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigClusters" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -853,7 +853,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraConfigClusters",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigClusters" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigClusters" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigClusters" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -897,7 +897,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraConfigPermissions",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraConfigPermissions" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigPermissions" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -916,7 +916,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraConfigPermissions",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraConfigPermissions" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraConfigPermissions" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraConfigPermissions" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -957,7 +957,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraEnvManagerSessions",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraEnvManagerSessions" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraEnvManagerSessions" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -976,7 +976,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraEnvManagerSessions",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraEnvManagerSessions" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraEnvManagerSessions" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraEnvManagerSessions" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
@@ -1020,7 +1020,7 @@ module.exports = function () {
                     "AlarmDescription": "ReadCapacityInfraOpsEnvironment",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityInfraOpsEnvironment" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraOpsEnvironment" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedReadCapacityUnits",
@@ -1039,7 +1039,7 @@ module.exports = function () {
                     "AlarmDescription": "WriteCapacityInfraOpsEnvironment",
                     "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityInfraOpsEnvironment" },
                     "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": "InfraOpsEnvironment" }],
+                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "InfraOpsEnvironment" } }],
                     "EvaluationPeriods": 1,
                     // "InsufficientDataActions": [""]
                     "MetricName": "ConsumedWriteCapacityUnits",
