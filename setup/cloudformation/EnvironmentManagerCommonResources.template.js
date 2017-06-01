@@ -3,16 +3,12 @@
 let {
     dependsOnSeq,
     streamArn,
-    triggerAll
+    triggerAll: trigger
 } = require('./template');
 
 module.exports = function ({ managedAccounts }) {
 
     managedAccounts = Array.from(new Set(managedAccounts || []));
-
-    function trigger(functionName, sourceArn) {
-        return Object.assign({ "Condition": "ThisIsMasterAccount" }, triggerAll(functionName, sourceArn));
-    }
 
     return {
         "AWSTemplateFormatVersion": "2010-09-09",
@@ -28,36 +24,9 @@ module.exports = function ({ managedAccounts }) {
                 "Description": "SNS Topic ARN for lambda alerts."
             }
         },
-        "Conditions": {
-            "ThisIsMasterAccount": {
-                "Fn::Equals": [
-                    {
-                        "Ref": "pMasterAccountId"
-                    },
-                    {
-                        "Ref": "AWS::AccountId"
-                    }
-                ]
-            },
-            "ThisIsNotMasterAccount": {
-                "Fn::Not": [
-                    {
-                        "Fn::Equals": [
-                            {
-                                "Ref": "pMasterAccountId"
-                            },
-                            {
-                                "Ref": "AWS::AccountId"
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
         "Resources": Object.assign(dependsOnSeq({
             "ConfigEnvironments": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -121,7 +90,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "ConfigServices": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -193,7 +161,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "ConfigDeploymentMaps": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -495,7 +462,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "ConfigNotificationSettings": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -559,7 +525,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "ConfigEnvironmentTypes": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -683,7 +648,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraChangeAudit": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -774,7 +738,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraConfigAccounts": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -838,7 +801,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraConfigClusters": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -902,7 +864,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraConfigPermissions": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -966,7 +927,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraEnvManagerSessions": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -1027,7 +987,6 @@ module.exports = function ({ managedAccounts }) {
             },
             "InfraOpsEnvironment": {
                 "Type": "AWS::DynamoDB::Table",
-                "Condition": "ThisIsMasterAccount",
                 "Properties": {
                     "AttributeDefinitions": [
                         {
@@ -1190,8 +1149,8 @@ module.exports = function ({ managedAccounts }) {
                         ]
                     }
                 },
-                "auditTriggerInfraConfigLBSettings": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBSettings')),
-                "auditTriggerInfraConfigLBUpstream": triggerAll('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBUpstream')),
+                "auditTriggerInfraConfigLBSettings": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBSettings')),
+                "auditTriggerInfraConfigLBUpstream": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigLBUpstream')),
                 "auditTriggerConfigServices": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigServices')),
                 "auditTriggerInfraConfigClusters": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('InfraConfigClusters')),
                 "auditTriggerConfigEnvironments": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigEnvironments')),
@@ -1202,7 +1161,6 @@ module.exports = function ({ managedAccounts }) {
                 "auditTriggerConfigNotificationSettings": trigger('lambdaInfraEnvironmentManagerAudit', streamArn('ConfigNotificationSettings')),
                 "roleInfraEnvironmentManagerAuditWriter": {
                     "Type": "AWS::IAM::Role",
-                    "Condition": "ThisIsMasterAccount",
                     "Properties": {
                         "AssumeRolePolicyDocument": {
                             "Version": "2012-10-17",
