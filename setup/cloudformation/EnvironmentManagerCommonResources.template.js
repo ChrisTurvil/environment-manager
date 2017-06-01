@@ -1056,7 +1056,7 @@ module.exports = function () {
                     "Properties": {
                         "Code": "./lambda/InfraEnvironmentManagerAudit/infra-environment-manager-audit.zip",
                         "Description": "This function responds to a DynamoDB stream event by writing the value of each record before and after the change to an audit log.",
-                        "FunctionName": "InfraEnvironmentManagerAudit",
+                        "FunctionName": { "Fn::Sub": "${pResourcePrefix}InfraEnvironmentManagerAudit" },
                         "Handler": "index.handler",
                         "MemorySize": 128,
                         "Role": {
@@ -1169,7 +1169,7 @@ module.exports = function () {
                     "Properties": {
                         "Code": "./lambda/InfraAsgLambdaScale/infraAsgLambdaScale.zip",
                         "Description": "This function scales auto scaling groups.",
-                        "FunctionName": "InfraAsgScale",
+                        "FunctionName": { "Fn::Sub": "${pResourcePrefix}InfraAsgScale" },
                         "Handler": "index.handler",
                         "MemorySize": 128,
                         "Role": {
