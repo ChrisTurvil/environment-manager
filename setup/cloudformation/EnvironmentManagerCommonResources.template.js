@@ -1318,16 +1318,16 @@ module.exports = function () {
                                             ],
                                             "Resource": [
                                                 {
-                                                    "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:tl-governator-stop"
+                                                    "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:tl-governator-stop"
                                                 },
                                                 {
-                                                    "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:asgLambdaScale"
+                                                    "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:asgLambdaScale"
                                                 },
                                                 {
-                                                    "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:InfraGovernator"
+                                                    "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:InfraGovernator"
                                                 },
                                                 {
-                                                    "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:InfraAsgLambdaScale"
+                                                    "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:InfraAsgLambdaScale"
                                                 }
                                             ]
                                         },
@@ -1338,10 +1338,10 @@ module.exports = function () {
                                             ],
                                             "Resource": [
                                                 {
-                                                    "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/ConfigAsgIPs"
+                                                    "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ConfigAsgIPs"
                                                 },
                                                 {
-                                                    "Fn::Sub": "arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/InfraAsgIPs"
+                                                    "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/InfraAsgIPs"
                                                 }
                                             ]
                                         },
