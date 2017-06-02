@@ -5,7 +5,7 @@ module.exports = function ({ managedAccounts }) {
 
     return {
         "AWSTemplateFormatVersion": "2010-09-09",
-        "Description": "Environment Manager Resources",
+        "Description": "Network and Compute resources for Environment Manager",
         "Parameters": {
             "pResourcePrefix": {
                 "Type": "String",
@@ -112,156 +112,6 @@ module.exports = function ({ managedAccounts }) {
             }
         },
         "Resources": {
-            "ConfigDeploymentExecutionStatus": {
-                "Type": "AWS::DynamoDB::Table",
-                "Properties": {
-                    "AttributeDefinitions": [
-                        {
-                            "AttributeName": "DeploymentID",
-                            "AttributeType": "S"
-                        }
-                    ],
-                    "KeySchema": [
-                        {
-                            "AttributeName": "DeploymentID",
-                            "KeyType": "HASH"
-                        }
-                    ],
-                    "ProvisionedThroughput": {
-                        "ReadCapacityUnits": 10,
-                        "WriteCapacityUnits": 2
-                    },
-                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigDeploymentExecutionStatus" }
-                }
-            },
-            "AlertReadCapacityConfigDeploymentExecutionStatus": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigDeploymentExecutionStatus",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigDeploymentExecutionStatus" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentExecutionStatus" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigDeploymentExecutionStatus": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigDeploymentExecutionStatus",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigDeploymentExecutionStatus" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigDeploymentExecutionStatus" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
-            "ConfigCompletedDeployments": {
-                "Type": "AWS::DynamoDB::Table",
-                "Properties": {
-                    "AttributeDefinitions": [
-                        {
-                            "AttributeName": "DeploymentID",
-                            "AttributeType": "S"
-                        },
-                        {
-                            "AttributeName": "StartTimestamp",
-                            "AttributeType": "S"
-                        },
-                        {
-                            "AttributeName": "StartDate",
-                            "AttributeType": "S"
-                        }
-                    ],
-                    "GlobalSecondaryIndexes": [
-                        {
-                            "IndexName": "StartDate-StartTimestamp-index",
-                            "KeySchema": [
-                                {
-                                    "AttributeName": "StartDate",
-                                    "KeyType": "HASH"
-                                },
-                                {
-                                    "AttributeName": "StartTimestamp",
-                                    "KeyType": "RANGE"
-                                }
-                            ],
-                            "Projection": {
-                                "ProjectionType": "ALL"
-                            },
-                            "ProvisionedThroughput": {
-                                "ReadCapacityUnits": 10,
-                                "WriteCapacityUnits": 2
-                            }
-                        }
-                    ],
-                    "KeySchema": [
-                        {
-                            "AttributeName": "DeploymentID",
-                            "KeyType": "HASH"
-                        }
-                    ],
-                    "ProvisionedThroughput": {
-                        "ReadCapacityUnits": 10,
-                        "WriteCapacityUnits": 2
-                    },
-                    "TableName": { "Fn::Sub": "${pResourcePrefix}ConfigCompletedDeployments" }
-                }
-            },
-            "AlertReadCapacityConfigCompletedDeployments": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "ReadCapacityConfigCompletedDeployments",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertReadCapacityConfigCompletedDeployments" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigCompletedDeployments" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedReadCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 8
-                }
-            },
-            "AlertWriteCapacityConfigCompletedDeployments": {
-                "Type": "AWS::CloudWatch::Alarm",
-                "Properties": {
-                    "ActionsEnabled": true,
-                    "AlarmActions": [{ "Ref": "pAlertSNSTopic" }],
-                    "AlarmDescription": "WriteCapacityConfigCompletedDeployments",
-                    "AlarmName": { "Fn::Sub": "${pResourcePrefix}AlertWriteCapacityConfigCompletedDeployments" },
-                    "ComparisonOperator": "GreaterThanThreshold",
-                    "Dimensions": [{ "Name": "TableName", "Value": { "Ref": "ConfigCompletedDeployments" } }],
-                    "EvaluationPeriods": 1,
-                    // "InsufficientDataActions": [""]
-                    "MetricName": "ConsumedWriteCapacityUnits",
-                    "Namespace": "AWS/DynamoDB",
-                    // "OKActions": [""]
-                    "Period": 60,
-                    "Statistic": "Sum",
-                    "Threshold": 1.6
-                }
-            },
             "loadBalancerEnvironmentManager": {
                 "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
                 "Properties": {
@@ -408,7 +258,7 @@ module.exports = function ({ managedAccounts }) {
                     "IamInstanceProfile": {
                         "Ref": "instanceProfileEnvironmentManager"
                     },
-                    "ImageId": "ami-f9dd458a",
+                    "ImageId": "ami-01ccc867",
                     "InstanceMonitoring": false,
                     "InstanceType": "t2.medium",
                     "KeyName": {
@@ -536,9 +386,9 @@ module.exports = function ({ managedAccounts }) {
                                         "Effect": "Allow",
                                         "Resource": [
                                             {
-                                                "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/roleInfraEnvironmentManagerChild"
+                                                "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/${pResourcePrefix}roleInfraEnvironmentManagerChild"
                                             }
-                                        ].concat(managedAccounts.map(accountNumber => `arn:aws:iam::${accountNumber}:role/roleInfraEnvironmentManagerChild`))
+                                        ].concat(managedAccounts.map(accountNumber => ({ 'Fn::Sub': `arn:aws:iam::${accountNumber}:role/\${pResourcePrefix}roleInfraEnvironmentManagerChild` })))
                                     },
                                     {
                                         "Effect": "Allow",
@@ -612,7 +462,7 @@ module.exports = function ({ managedAccounts }) {
                             }
                         }
                     ],
-                    "RoleName": {"Fn::Sub": "${pResourcePrefix}roleInfraEnvironmentManager"}
+                    "RoleName": { "Fn::Sub": "${pResourcePrefix}roleInfraEnvironmentManager" }
                 }
             },
             "instanceProfileEnvironmentManager": {

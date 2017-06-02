@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Publication of Environment Manager Change Events
+Description: Environment Manager
 Parameters:
   pResourcePrefix:
     Type: String
@@ -98,6 +98,7 @@ Resources:
       Type: AWS::CloudFormation::Stack
       Properties:
         Parameters:
+          pResourcePrefix: !Ref pResourcePrefix
           pMasterAccountId: !Ref AWS::AccountId
           pDeploymentLogsBucket: !Ref pDeploymentLogsBucket
           pPackagesBucket: !Ref pPackagesBucket

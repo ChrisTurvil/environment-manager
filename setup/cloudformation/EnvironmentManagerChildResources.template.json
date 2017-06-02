@@ -1,7 +1,12 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Environment Manager Resources",
+    "Description": "Agent allowing Environment Manager to control this account",
     "Parameters": {
+        "pResourcePrefix": {
+            "Type": "String",
+            "Description": "Prefix for named AWS resources",
+            "Default": ""
+        },
         "pMasterAccountId": {
             "Type": "String",
             "Description": "Master AWS account ID",
@@ -52,33 +57,8 @@
                             "Statement": [
                                 {
                                     "Effect": "Allow",
-                                    "Action": [
-                                        "dynamodb:Batch*",
-                                        "dynamodb:DeleteItem",
-                                        "dynamodb:Describe*",
-                                        "dynamodb:Get*",
-                                        "dynamodb:List*",
-                                        "dynamodb:PutItem",
-                                        "dynamodb:Query",
-                                        "dynamodb:Scan",
-                                        "dynamodb:UpdateItem"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Config*"
-                                        },
-                                        {
-                                            "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Infra*"
-                                        },
-                                        {
-                                            "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Environment*"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Effect": "Allow",
                                     "Action": "s3:GetObject",
-                                    "Resource": "arn:aws:s3:::secureaccess-${AWS::AccountId}/Infra/EnvironmentManager/*"
+                                    "Resource": "arn:aws:s3:::secureaccess-${AWS::AccountId}/Infra/${pResourcePrefix}EnvironmentManager/*"
                                 },
                                 {
                                     "Effect": "Allow",
@@ -156,10 +136,10 @@
                                     ],
                                     "Resource": [
                                         {
-                                            "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:footplate*"
+                                            "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${pResourcePrefix}footplate*"
                                         },
                                         {
-                                            "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:environment*"
+                                            "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${pResourcePrefix}environment*"
                                         }
                                     ]
                                 }
@@ -167,7 +147,9 @@
                         }
                     }
                 ],
-                "RoleName": "roleInfraEnvironmentManagerChild"
+                "RoleName": {
+                    "Fn::Sub": "${pResourcePrefix}roleInfraEnvironmentManagerChild"
+                }
             }
         }
     },

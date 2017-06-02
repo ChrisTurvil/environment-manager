@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 # A template for a stack that contains a subnet group and a pair
 # of security groups for an ElastiCache Redis cluster.
-Description: Environment Manager Resources
+Description: Network to host a Redis cluster for Environment Manager
 Parameters:
   pResourcePrefix:
     Type: String
