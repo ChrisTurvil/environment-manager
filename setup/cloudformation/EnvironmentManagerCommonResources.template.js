@@ -184,14 +184,6 @@ module.exports = function () {
                         {
                             "AttributeName": "LoadBalancerGroup",
                             "AttributeType": "S"
-                        },
-                        {
-                            "AttributeName": "Service",
-                            "AttributeType": "S"
-                        },
-                        {
-                            "AttributeName": "Upstream",
-                            "AttributeType": "S"
                         }
                     ],
                     "GlobalSecondaryIndexes": [
@@ -1083,7 +1075,7 @@ module.exports = function () {
                         "Dimensions": [
                             {
                                 "Name": "FunctionName",
-                                "Value": { "Ref": "InfraEnvironmentManagerAudit" }
+                                "Value": { "Ref": "lambdaInfraEnvironmentManagerAudit" }
                             }
                         ],
                         "Period": 60,
@@ -1123,7 +1115,7 @@ module.exports = function () {
                                             ],
                                             "Resource": [
                                                 {
-                                                    "Ref": "InfraChangeAudit"
+                                                    "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InfraChangeAudit}"
                                                 }
                                             ]
                                         },
@@ -1196,7 +1188,7 @@ module.exports = function () {
                         "Dimensions": [
                             {
                                 "Name": "FunctionName",
-                                "Value": { "Ref": "InfraAsgScale" }
+                                "Value": { "Ref": "lambdaInfraAsgScale" }
                             }
                         ],
                         "Period": 60,
