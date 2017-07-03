@@ -30,33 +30,4 @@ function offsetMilliseconds(date, offset) {
   return date;
 }
 
-/**
- * @param target
- * @returns {{uri: uri}}
- */
-function make(target) {
-  return {
-
-    uri() {
-      let result = '';
-
-      target.forEach((segment) => {
-        if (!segment) return;
-        result += `/${segment}`;
-      });
-
-      return result;
-    }
-  };
-}
-
-/**
- * @param request
- * @returns {null}
- */
-function extractQuery(request) {
-  let parsedUrl = url.parse(request.url);
-  return parsedUrl.query ? querystring.parse(parsedUrl.query) : null;
-}
-
-module.exports = { make, extractQuery, safeParseJSON, offsetMilliseconds };
+module.exports = { safeParseJSON, offsetMilliseconds };
