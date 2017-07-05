@@ -10,7 +10,7 @@
 .ntvs_analysis.dat
 
 # NPM modules
-node_modules/
+#node_modules/
 .idea
 
 # Istanbul code coverage
