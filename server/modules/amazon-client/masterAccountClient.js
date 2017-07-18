@@ -3,14 +3,17 @@
 'use strict';
 
 let AWS = require('aws-sdk');
-let common = require('./common');
+
+function createWithOptions(Ctor) {
+  return ({ region } = {}) => (region !== undefined ? new Ctor({ region }) : new Ctor());
+}
 
 module.exports = {
-  createLowLevelDynamoClient: _ => common.create(AWS.DynamoDB, common.getOptions()),
-  createDynamoClient: _ => common.create(AWS.DynamoDB.DocumentClient, common.getOptions()),
-  createASGClient: () => common.create(AWS.AutoScaling, common.getOptions()),
-  createEC2Client: () => common.create(AWS.EC2, common.getOptions()),
-  createIAMClient: () => common.create(AWS.IAM, common.getOptions()),
-  createS3Client: () => common.create(AWS.S3, common.getOptions()),
-  createSNSClient: () => common.create(AWS.SNS, common.getOptions())
+  createLowLevelDynamoClient: createWithOptions(AWS.DynamoDB),
+  createDynamoClient: createWithOptions(AWS.DynamoDB.DocumentClient),
+  createASGClient: createWithOptions(AWS.AutoScaling),
+  createEC2Client: createWithOptions(AWS.EC2),
+  createIAMClient: createWithOptions(AWS.IAM),
+  createS3Client: createWithOptions(AWS.S3),
+  createSNSClient: createWithOptions(AWS.SNS)
 };

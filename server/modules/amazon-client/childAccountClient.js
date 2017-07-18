@@ -2,34 +2,8 @@
 
 'use strict';
 
-let co = require('co');
 let guid = require('uuid/v1');
 let AWS = require('aws-sdk');
-let common = require('./common');
-let awsAccounts = require('modules/awsAccounts');
-
-module.exports = {
-  createLowLevelDynamoClient: createClientWithRole(AWS.DynamoDB),
-  createDynamoClient: createClientWithRole(AWS.DynamoDB.DocumentClient),
-  createASGClient: createClientWithRole(AWS.AutoScaling),
-  createEC2Client: createClientWithRole(AWS.EC2),
-  createIAMClient: createClientWithRole(AWS.IAM),
-  createS3Client: createClientWithRole(AWS.S3),
-  createSNSClient: createClientWithRole(AWS.SNS),
-  assumeRole
-};
-
-function createClientWithRole(ClientType) {
-  return co.wrap(function* clientFactory(accountName) {
-    let account = yield awsAccounts.getByName(accountName);
-    let options = common.getOptions();
-    if (account.Impersonate && account.RoleArn !== undefined) {
-      options.credentials = yield getCredentials(account.RoleArn);
-    }
-
-    return common.create(ClientType, options);
-  });
-}
 
 function getCredentials(roleARN) {
   return assumeRole(roleARN).then(response =>
@@ -47,6 +21,30 @@ function assumeRole(roleARN) {
     RoleArn: roleARN,
     RoleSessionName: guid()
   };
-
   return stsClient.assumeRole(stsParameters).promise();
 }
+
+function createWithOptions(Ctor) {
+  return ({ region, roleArn } = {}) => {
+    let credentialsP = roleArn !== undefined
+      ? getCredentials(roleArn).then(credentials => ({ credentials }))
+      : Promise.resolve({});
+    let role = region !== undefined
+      ? ({ region })
+      : ({});
+    return credentialsP
+      .then(Object.assign.bind(null, role))
+      .then(options => new Ctor(options));
+  };
+}
+
+module.exports = {
+  createLowLevelDynamoClient: createWithOptions(AWS.DynamoDB),
+  createDynamoClient: createWithOptions(AWS.DynamoDB.DocumentClient),
+  createASGClient: createWithOptions(AWS.AutoScaling),
+  createEC2Client: createWithOptions(AWS.EC2),
+  createIAMClient: createWithOptions(AWS.IAM),
+  createS3Client: createWithOptions(AWS.S3),
+  createSNSClient: createWithOptions(AWS.SNS),
+  assumeRole
+};
