@@ -5,7 +5,8 @@
 let AWS = require('aws-sdk');
 
 function createWithOptions(Ctor) {
-  return ({ region } = {}) => (region !== undefined ? new Ctor({ region }) : new Ctor());
+  return ({ region } = {}) => Promise.resolve()
+    .then(() => (region !== undefined ? new Ctor({ region }) : new Ctor()));
 }
 
 module.exports = {
