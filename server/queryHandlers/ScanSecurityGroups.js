@@ -2,18 +2,16 @@
 
 'use strict';
 
-let resourceProvider = require('modules/resourceProvider');
+let securityGroupResourceFactory = require('modules/resourceFactories/securityGroupResourceFactory');
 
 module.exports = function ScanSecurityGroupsQueryHandler(query) {
-  let parameters = { accountName: query.accountName };
-
-  return resourceProvider.getInstanceByName('sg', parameters).then((resource) => {
-    let request = {
-      vpcId: query.vpcId,
-      groupIds: query.groupIds,
-      groupNames: query.groupNames
-    };
-
-    return resource.scan(request);
-  });
+  return securityGroupResourceFactory(query.partition)
+    .then((resource) => {
+      let request = {
+        vpcId: query.vpcId,
+        groupIds: query.groupIds,
+        groupNames: query.groupNames
+      };
+      return resource.scan(request);
+    });
 };
