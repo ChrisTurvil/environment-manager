@@ -32,5 +32,5 @@ class KeyPairResource {
 }
 
 module.exports = {
-  create: ({ awsOptions }) => createEC2Client(awsOptions).then(client => new KeyPairResource(client))
+  create: ({ partitions }) => createEC2Client(partitions).then(client => new KeyPairResource(client))
 };

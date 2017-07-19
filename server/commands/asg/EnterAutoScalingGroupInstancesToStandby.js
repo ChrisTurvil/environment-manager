@@ -4,24 +4,23 @@
 
 let assert = require('assert');
 let co = require('co');
-let resourceProvider = require('modules/resourceProvider');
 let sender = require('modules/sender');
 let autoScalingGroupSizePredictor = require('modules/autoScalingGroupSizePredictor');
 let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 
 module.exports = function EnterAutoScalingGroupInstancesToStandbyCommandHandler(command) {
   assert(command, 'Expected "command" argument not to be null.');
-  assert(command.accountName, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(command.partition, 'Expected "command" argument to contain "partition" property not null or empty.');
   assert(command.autoScalingGroupName, 'Expected "command" argument to contain "autoScalingGroupName" property not null or empty.');
   assert(command.instanceIds, 'Expected "command" argument to contain "instanceIds" property not null or empty.');
 
   return co(function* () {
     // Send a query to obtain the AutoScalingGroup information.
-    let autoScalingGroup = yield AutoScalingGroup.getByName(command.accountName, command.autoScalingGroupName);
+    let autoScalingGroup = yield AutoScalingGroup.getByName(command.partition, command.autoScalingGroupName);
 
-    // Create a resource to work with AutoScalingGroups in the target AWS account.
-    let parameters = { accountName: command.accountName };
-    let asgResource = yield resourceProvider.getInstanceByName('asgs', parameters);
+    // Create a resource to work with AutoScalingGroups in the target partition.
+    let asgResource = new AsgResource(command.partition);
 
     // Predict AutoScalingGroup size after entering instances to standby
     let expectedSize = yield autoScalingGroupSizePredictor.predictSizeAfterEnteringInstancesToStandby(
@@ -51,7 +50,7 @@ module.exports = function EnterAutoScalingGroupInstancesToStandbyCommandHandler(
 function setAutoScalingGroupSize(size, parentCommand) {
   let command = {
     name: 'SetAutoScalingGroupSize',
-    accountName: parentCommand.accountName,
+    partition: parentCommand.partition,
     autoScalingGroupName: parentCommand.autoScalingGroupName,
     autoScalingGroupMinSize: size.min,
     autoScalingGroupMaxSize: size.max

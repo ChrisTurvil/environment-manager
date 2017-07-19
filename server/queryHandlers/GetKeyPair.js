@@ -5,11 +5,11 @@
 let assert = require('assert');
 let keypairFactory = require('modules/factories/keypairFactory');
 
-module.exports = function GetKeyPairQueryHandler({ awsOptions, keyName }) {
-  assert(awsOptions);
+module.exports = function GetKeyPairQueryHandler({ partitions, keyName }) {
+  assert(partitions);
   assert(keyName);
 
-  let parameters = { awsOptions };
+  let parameters = { partitions };
   return keypairFactory.create(parameters)
     .then(resource => resource.get({ keyName }));
 };

@@ -3,14 +3,14 @@
 'use strict';
 
 let assert = require('assert');
-let resourceProvider = require('modules/resourceProvider');
 let co = require('co');
 let sender = require('modules/sender');
 let autoScalingGroupSizePredictor = require('modules/autoScalingGroupSizePredictor');
 let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 
 module.exports = function ExitAutoScalingGroupInstancesFromStandby(command) {
-  assert(command.accountName !== undefined && command.accountName !== null);
+  assert(command.partition !== undefined && command.partition !== null);
   assert(command.autoScalingGroupName !== undefined && command.autoScalingGroupName !== null);
   assert(command.instanceIds !== undefined && command.instanceIds !== null);
 
@@ -18,21 +18,20 @@ module.exports = function ExitAutoScalingGroupInstancesFromStandby(command) {
     let parameters;
     let childCommand;
 
-    let autoScalingGroup = yield AutoScalingGroup.getByName(command.accountName, command.autoScalingGroupName);
+    let autoScalingGroup = yield AutoScalingGroup.getByName(command.partition, command.autoScalingGroupName);
 
     // Predict AutoScalingGroup size after exiting instances from standby
     let expectedSize = yield autoScalingGroupSizePredictor.predictSizeAfterExitingInstancesFromStandby(autoScalingGroup, command.instanceIds);
 
     // Create a resource to work with AutoScalingGroups in the target AWS account.
-    parameters = { accountName: command.accountName };
-    let asgResource = yield resourceProvider.getInstanceByName('asgs', parameters);
+    let asgResource = new AsgResource(command.partition);
 
     // Before exiting instances from Standby the AutoScalingGroup maximum size has to be
     // increased because the action of "exiting instances from standby" will automatically
     // increase the desired capacity and this cannot be greater than the maximum size.
     childCommand = {
       name: 'SetAutoScalingGroupSize',
-      accountName: command.accountName,
+      partition: command.partition,
       autoScalingGroupName: command.autoScalingGroupName,
       autoScalingGroupMaxSize: expectedSize
     };
@@ -51,7 +50,7 @@ module.exports = function ExitAutoScalingGroupInstancesFromStandby(command) {
     // maximum and desired size are equal by convention.
     childCommand = {
       name: 'SetAutoScalingGroupSize',
-      accountName: command.accountName,
+      partition: command.partition,
       autoScalingGroupName: command.autoScalingGroupName,
       autoScalingGroupMinSize: expectedSize
     };

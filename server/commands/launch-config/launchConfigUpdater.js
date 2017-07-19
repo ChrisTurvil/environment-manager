@@ -3,19 +3,20 @@
 'use strict';
 
 let co = require('co');
-let resourceProvider = require('modules/resourceProvider');
+let AsgResource = require('modules/resourceFactories/AsgResource');
+let { create: launchConfigurationResource } = require('modules/resourceFactories/launchConfigurationResourceFactory');
 
 module.exports = {
   //
-  set(accountName, autoScalingGroup, updateAction) {
+  set(partition, autoScalingGroup, updateAction) {
     return co(function* () {
       // Obtain an object containing resource instances to work with
       // LaunchConfigurations and AutoScalingGroups
       //
       let autoScalingGroupName = autoScalingGroup.$autoScalingGroupName;
 
-      let launchConfigurationClient = yield resourceProvider.getInstanceByName('launchconfig', { accountName });
-      let autoScalingGroupClient = yield resourceProvider.getInstanceByName('asgs', { accountName });
+      let launchConfigurationClient = yield launchConfigurationResource({ partition });
+      let autoScalingGroupClient = new AsgResource(partition);
 
       // Send a request to obtain the LaunchConfiguration for the specific
       // AutoScalingGroup

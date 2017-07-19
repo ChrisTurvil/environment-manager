@@ -136,8 +136,8 @@ function createCache(name, fn, options) {
    * Get an item from the cache.
    */
   function get(key) {
-    if (!(key && typeof key === 'string')) {
-      throw new Error('Cache key must be a string.');
+    if ((key === null || key === undefined)) {
+      throw new Error('Cache key must have a value.');
     }
 
     /**

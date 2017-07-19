@@ -291,7 +291,7 @@ describe('healthReporter', function () {
             }
           }
         ];
-        let getAwsOptionsForEnvironment = (() => {
+        let getPartitionsForEnvironment = (() => {
           let environments = {
             env1a: { region: 'region1', roleArn: 'role1' },
             env1b: { region: 'region1', roleArn: 'role1' },
@@ -299,7 +299,7 @@ describe('healthReporter', function () {
           };
           return environment => Promise.resolve(environments[environment]);
         })();
-        sut.instancesRequestFor(getAwsOptionsForEnvironment, health).should.finally.eql({
+        sut.instancesRequestFor(getPartitionsForEnvironment, health).should.finally.eql({
           '{"region":"region1","roleArn":"role1"}': ['node1'],
           '{"region":"region1","roleArn":"role2"}': ['node1', 'node2']
         });

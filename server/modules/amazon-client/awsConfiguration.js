@@ -10,14 +10,14 @@ let accounts = require('modules/data-access/accounts');
 let environments = require('modules/data-access/configEnvironments');
 let environmentTypes = require('modules/data-access/configEnvironmentTypes');
 
-function getAwsOptionsForEnvironment(environmentName) {
+function getPartitionsForEnvironment(environmentName) {
   return environments.get({ EnvironmentName: environmentName })
     .then(environment => (environment !== null
-      ? getAwsOptionsForEnvironmentType(environment.Value.EnvironmentType)
+      ? getPartitionsForEnvironmentType(environment.Value.EnvironmentType)
       : null));
 }
 
-function getAwsOptionsForEnvironmentType(environmentTypeName) {
+function getPartitionsForEnvironmentType(environmentTypeName) {
   if (typeof environmentTypeName !== 'string') {
     return Promise.resolve(null);
   }
@@ -42,6 +42,6 @@ function getAwsOptionsForEnvironmentType(environmentTypeName) {
 }
 
 module.exports = {
-  getAwsOptionsForEnvironment,
-  getAwsOptionsForEnvironmentType
+  getPartitionsForEnvironment,
+  getPartitionsForEnvironmentType
 };

@@ -3,7 +3,7 @@
 'use strict';
 
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createASGClient } = require('modules/amazon-client/childAccountClient');
 let AwsError = require('modules/errors/AwsError.class');
 let AutoScalingGroupNotFoundError = require('modules/errors/AutoScalingGroupNotFoundError.class');
 let AutoScalingGroupAlreadyExistsError = require('modules/errors/AutoScalingGroupAlreadyExistsError.class');
@@ -12,18 +12,18 @@ let fp = require('lodash/fp');
 let logger = require('modules/logger');
 let pages = require('modules/amazon-client/pages');
 
-function getAllAsgsInAccount(accountId, names) {
-  logger.debug(`Describing all ASGs in account "${accountId}"...`);
+function getAllAsgsInPartition(partition, names) {
+  logger.debug(`Describing all ASGs in "${JSON.stringify(partition)}"...`);
   let request = (names && names.length) ? { AutoScalingGroupNames: names } : {};
-  let asgDescriptions = amazonClientFactory.createASGClient(accountId)
+  let asgDescriptions = createASGClient(partition)
     .then(client => pages.flatten(page => page.AutoScalingGroups, client.describeAutoScalingGroups(request)));
   return asgDescriptions;
 }
 
-let asgCache = cacheManager.create('Auto Scaling Groups', getAllAsgsInAccount, { stdTTL: 60 });
+let asgCache = cacheManager.create('Auto Scaling Groups', getAllAsgsInPartition, { stdTTL: 60 });
 
-function AsgResource(accountId) {
-  let asgClient = () => amazonClientFactory.createASGClient(accountId);
+function AsgResource(partition) {
+  let asgClient = () => createASGClient(partition);
 
   function standardifyError(error, autoScalingGroupName) {
     if (!error) return null;
@@ -51,12 +51,12 @@ function AsgResource(accountId) {
     })();
 
     let AutoScalingGroup = require('models/AutoScalingGroup'); // Making this require global results in a module dependency cycle!
-    return asgCache.get(accountId).then(fp.flow(fp.filter(predicate), fp.map(asg => new AutoScalingGroup(asg))));
+    return asgCache.get(partition).then(fp.flow(fp.filter(predicate), fp.map(asg => new AutoScalingGroup(asg))));
   }
 
   this.get = function (parameters) {
     if (parameters.clearCache === true) {
-      asgCache.del(accountId);
+      asgCache.del(partition);
     }
     return describeAutoScalingGroups([parameters.name]).then((result) => {
       if (result.length > 0) return result[0];
@@ -115,7 +115,7 @@ function AsgResource(accountId) {
       request.VPCZoneIdentifier = parameters.subnets.join(',');
     }
 
-    asgCache.del(accountId);
+    asgCache.del(partition);
 
     return asgClient().then(client => client.updateAutoScalingGroup(request).promise()).catch((error) => {
       throw standardifyError(error, parameters.name);

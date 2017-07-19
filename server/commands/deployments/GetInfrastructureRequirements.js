@@ -12,7 +12,7 @@ let namingConvention = require('modules/provisioning/namingConventionProvider');
 let sender = require('modules/sender');
 let getASG = require('queryHandlers/GetAutoScalingGroup');
 let _ = require('lodash');
-let { getAwsOptionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
 
 module.exports = function GetInfrastructureRequirements(command) {
   let logger = new DeploymentCommandHandlerLogger(command);
@@ -26,13 +26,13 @@ module.exports = function GetInfrastructureRequirements(command) {
 
     logger.info('Reading infrastructure configuration...');
 
-    let awsOptions = yield getAwsOptionsForEnvironment(environmentName);
+    let partitions = yield getPartitionsForEnvironment(environmentName);
     let configuration = yield configProvider.get(environmentName, serviceName, deployment.serverRoleName);
-    let asgsToCreate = yield getASGsToCreate(logger, configuration, awsOptions, slice);
-    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(awsOptions, configuration, asgsToCreate, slice);
+    let asgsToCreate = yield getASGsToCreate(logger, configuration, partitions, slice);
+    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(partitions, configuration, asgsToCreate, slice);
 
     if (!asgsToCreate.length) return requiredInfra;
-    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, awsOptions);
+    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, partitions);
 
     // Check launchConfigs are valid
     launchConfigsToCreate.forEach((template) => {
@@ -53,7 +53,7 @@ module.exports = function GetInfrastructureRequirements(command) {
   });
 };
 
-function getExpectedNumberOfInstances(awsOptions, config, slice, asgsToCreate) {
+function getExpectedNumberOfInstances(partitions, config, slice, asgsToCreate) {
   return co(function* () {
     if (asgsToCreate.length) {
       // ASG does not exist yet, get desired size from server role
@@ -61,14 +61,14 @@ function getExpectedNumberOfInstances(awsOptions, config, slice, asgsToCreate) {
     } else {
       // ASG exists, read current desired size
       let autoScalingGroupName = namingConvention.getAutoScalingGroupName(config, slice);
-      return getASG({ awsOptions, autoScalingGroupName }).then(data => data.DesiredCapacity);
+      return getASG({ partitions, autoScalingGroupName }).then(data => data.DesiredCapacity);
     }
   });
 }
 
-function getASGsToCreate(logger, configuration, awsOptions, slice) {
+function getASGsToCreate(logger, configuration, partitions, slice) {
   return co(function* () {
-    let autoScalingTemplates = yield asgTemplatesProvider.get(configuration, awsOptions);
+    let autoScalingTemplates = yield asgTemplatesProvider.get(configuration, partitions);
     let autoScalingGroupNames = autoScalingTemplates
       .map(template => template.autoScalingGroupName)
       .filter((asgName) => {
@@ -79,19 +79,19 @@ function getASGsToCreate(logger, configuration, awsOptions, slice) {
             asgName.endsWith(`-${slice}`);                                // Create ASG if it's the target slice
       });
 
-    let autoScalingGroupNamesToCreate = yield getASGNamesToCreate(logger, autoScalingGroupNames, awsOptions);
+    let autoScalingGroupNamesToCreate = yield getASGNamesToCreate(logger, autoScalingGroupNames, partitions);
     return autoScalingTemplates.filter(template =>
       autoScalingGroupNamesToCreate.indexOf(template.autoScalingGroupName) >= 0
     );
   });
 }
 
-function getASGNamesToCreate(logger, autoScalingGroupNames, awsOptions) {
+function getASGNamesToCreate(logger, autoScalingGroupNames, partitions) {
   return co(function* () {
     logger.info(`Following AutoScalingGroups are expected: [${autoScalingGroupNames.join(', ')}]`);
     let query = {
       name: 'ScanAutoScalingGroups',
-      awsOptions,
+      partitions,
       autoScalingGroupNames
     };
 
@@ -116,20 +116,20 @@ function getASGNamesToCreate(logger, autoScalingGroupNames, awsOptions) {
   });
 }
 
-function getLaunchConfigsToCreate(logger, configuration, autoScalingTemplates, awsOptions) {
+function getLaunchConfigsToCreate(logger, configuration, autoScalingTemplates, partitions) {
   return co(function* () {
     let launchConfigurationNames = autoScalingTemplates.map(template =>
       template.launchConfigurationName
     );
 
     let launchConfigurationNamesToCreate = yield getLaunchConfigNamesToCreate(
-      logger, launchConfigurationNames, awsOptions
+      logger, launchConfigurationNames, partitions
     );
     if (!launchConfigurationNamesToCreate.length) {
       return [];
     }
     let launchConfigurationTemplates = yield launchConfigurationTemplatesProvider.get(
-      configuration, awsOptions, logger
+      configuration, partitions, logger
     );
 
     return launchConfigurationTemplates.filter(template =>
@@ -138,12 +138,12 @@ function getLaunchConfigsToCreate(logger, configuration, autoScalingTemplates, a
   });
 }
 
-function getLaunchConfigNamesToCreate(logger, launchConfigurationNames, awsOptions) {
+function getLaunchConfigNamesToCreate(logger, launchConfigurationNames, partitions) {
   return co(function* () {
     logger.info(`Following LaunchConfigurations are expected: [${launchConfigurationNames.join(', ')}]`);
     let query = {
       name: 'ScanLaunchConfigurations',
-      awsOptions,
+      partitions,
       launchConfigurationNames
     };
 

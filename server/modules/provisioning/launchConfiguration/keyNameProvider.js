@@ -7,13 +7,13 @@ let ConfigurationError = require('modules/errors/ConfigurationError.class');
 let GetKeyPair = require('queryHandlers/GetKeyPair');
 
 module.exports = {
-  get(configuration, awsOptions) {
+  get(configuration, partitions) {
     assert(configuration, 'Expected "configuration" argument not to be null');
-    assert(awsOptions, 'Expected "awsOptions" argument not to be null');
+    assert(partitions, 'Expected "partitions" argument not to be null');
 
     let customKeyName = configuration.serverRole.ClusterKeyName;
     if (customKeyName) {
-      return getKeyPairByName(customKeyName, awsOptions)
+      return getKeyPairByName(customKeyName, partitions)
         .then(
         keyPair => Promise.resolve(keyPair.KeyName),
         error => Promise.reject(new ConfigurationError(
@@ -27,7 +27,7 @@ module.exports = {
           new ConfigurationError('Server role EC2 key pair set to cluster EC2 key pair, but this is empty. Please fix your configuration'));
       }
 
-      return getKeyPairByName(keyName, awsOptions)
+      return getKeyPairByName(keyName, partitions)
         .then(
         keyPair => Promise.resolve(keyPair.KeyName),
         error => Promise.reject(new ConfigurationError(
@@ -39,6 +39,6 @@ module.exports = {
   }
 };
 
-function getKeyPairByName(keyName, awsOptions) {
-  return GetKeyPair({ awsOptions, keyName });
+function getKeyPairByName(keyName, partitions) {
+  return GetKeyPair({ partitions, keyName });
 }

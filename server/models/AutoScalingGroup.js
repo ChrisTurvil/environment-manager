@@ -12,6 +12,9 @@ let serviceTargets = require('modules/service-targets');
 let resourceProvider = require('modules/resourceProvider');
 let logger = require('modules/logger');
 let TaggableMixin = require('./TaggableMixin');
+let AsgResource = require('modules/resourceFactories/AsgResource');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
+let { create: }
 
 class AutoScalingGroup {
 
@@ -26,7 +29,7 @@ class AutoScalingGroup {
       if (name === undefined) {
         throw new Error(`Launch configuration doesn't exist for ${self.AutoScalingGroupName}`);
       }
-      let client = yield resourceProvider.getInstanceByName('launchconfig', { accountName: self.$accountName });
+      let client = yield resourceProvider.getInstanceByName('launchconfig', { partition });
       return client.get({ name });
     });
   }
@@ -43,9 +46,9 @@ class AutoScalingGroup {
     let environmentName = this.getTag('Environment');
     let self = this;
     return co(function* () {
-      let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-      let asgResource = yield resourceProvider.getInstanceByName('asgs', { accountName });
-      let launchConfigResource = yield resourceProvider.getInstanceByName('launchconfig', { accountName });
+      let partition = yield getPartitionsForEnvironment(environmentName);
+      let asgResource = new AsgResource(partition);
+      let launchConfigResource = yield resourceProvider.getInstanceByName('launchconfig', { partition });
       logger.info(`Deleting AutoScalingGroup ${self.AutoScalingGroupName} and associated Launch configuration ${self.LaunchConfigurationName}`);
 
       yield asgResource.delete({ name: self.AutoScalingGroupName, force: true });
@@ -64,16 +67,16 @@ class AutoScalingGroup {
       .then(asgs => _.filter(asgs, asg => asg.getTag('Role') === serverRoleName));
   }
 
-  static getByName(accountName, autoScalingGroupName) {
+  static getByName(partition, autoScalingGroupName) {
     return co(function* () {
       let query = {
         name: 'GetAutoScalingGroup',
-        accountName,
+        partition,
         autoScalingGroupName
       };
 
       let data = yield sender.sendQuery({ query });
-      data.$accountName = accountName;
+      data.$partition = partition;
       data.$autoScalingGroupName = autoScalingGroupName;
       return data;
     });
@@ -81,13 +84,13 @@ class AutoScalingGroup {
 
   static getAllByEnvironment(environmentName) {
     return co(function* () {
-      let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
+      let partition = yield getPartitionsForEnvironment(environmentName);
       let startTime = moment.utc();
 
       return sender.sendQuery({
         query: {
           name: 'ScanAutoScalingGroups',
-          accountName
+          partition
         }
       }).then((result) => {
         let duration = moment.duration(moment.utc().diff(startTime)).asMilliseconds();
