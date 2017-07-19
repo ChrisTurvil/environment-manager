@@ -3,7 +3,7 @@
 'use strict';
 
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createASGClient } = require('modules/amazon-client/childAccountClient');
 
 let AwsError = require('modules/errors/AwsError.class');
 let LaunchConfigurationAlreadyExistsError = require('modules/errors/LaunchConfigurationAlreadyExistsError.class');
@@ -86,11 +86,4 @@ class LaunchConfigurationResource {
   }
 }
 
-module.exports = {
-
-  canCreate: resourceDescriptor =>
-    resourceDescriptor.type.toLowerCase() === 'launchconfig',
-
-  create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.AutoScaling(parameters.partition).then(client => new LaunchConfigurationResource(client))
-};
+module.exports = partition => createASGClient(partition).then(client => new LaunchConfigurationResource(client));

@@ -7,14 +7,12 @@ let moment = require('moment');
 let co = require('co');
 let sender = require('modules/sender');
 let EnvironmentType = require('models/EnvironmentType');
-let Environment = require('models/Environment');
 let serviceTargets = require('modules/service-targets');
-let resourceProvider = require('modules/resourceProvider');
 let logger = require('modules/logger');
 let TaggableMixin = require('./TaggableMixin');
 let AsgResource = require('modules/resourceFactories/AsgResource');
 let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
-let { create: }
+let launchConfigurationResourceFactory = require('modules/resourceFactories/launchConfigurationResourceFactory');
 
 class AutoScalingGroup {
 
@@ -29,7 +27,9 @@ class AutoScalingGroup {
       if (name === undefined) {
         throw new Error(`Launch configuration doesn't exist for ${self.AutoScalingGroupName}`);
       }
-      let client = yield resourceProvider.getInstanceByName('launchconfig', { partition });
+      let environmentName = this.getTag('Environment');
+      let partition = yield getPartitionsForEnvironment(environmentName);
+      let client = yield launchConfigurationResourceFactory(partition);
       return client.get({ name });
     });
   }
@@ -48,7 +48,7 @@ class AutoScalingGroup {
     return co(function* () {
       let partition = yield getPartitionsForEnvironment(environmentName);
       let asgResource = new AsgResource(partition);
-      let launchConfigResource = yield resourceProvider.getInstanceByName('launchconfig', { partition });
+      let launchConfigResource = yield launchConfigurationResourceFactory(partition);
       logger.info(`Deleting AutoScalingGroup ${self.AutoScalingGroupName} and associated Launch configuration ${self.LaunchConfigurationName}`);
 
       yield asgResource.delete({ name: self.AutoScalingGroupName, force: true });

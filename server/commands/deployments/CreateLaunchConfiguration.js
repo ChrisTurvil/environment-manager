@@ -3,7 +3,7 @@
 let assert = require('assert');
 let co = require('co');
 let DeploymentCommandHandlerLogger = require('commands/deployments/DeploymentCommandHandlerLogger');
-let resourceProvider = require('modules/resourceProvider');
+let launchConfigurationResourceFactory = require('modules/resourceFactories/launchConfigurationResourceFactory');
 let _ = require('lodash');
 
 module.exports = function CreateLaunchConfigurationCommandHandler(command) {
@@ -11,16 +11,16 @@ module.exports = function CreateLaunchConfigurationCommandHandler(command) {
 
   assert(command, 'Expected "command" argument not to be null.');
   assert(command.template, 'Expected "command" argument to contain "template" property not null.');
-  assert(command.accountName, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(command.partition, 'Expected "command" argument to contain "accountName" property not null or empty.');
 
   return co(function* () {
     let template = command.template;
-    let accountName = command.accountName;
+    let { partition } = command;
     let launchConfigurationName = template.launchConfigurationName;
 
     logger.info(`Creating [${launchConfigurationName}] LaunchConfiguration...`);
 
-    let launchConfigurationClient = yield resourceProvider.getInstanceByName('launchconfig', { accountName });
+    let launchConfigurationClient = yield launchConfigurationResourceFactory(partition);
 
     let request = getCreateLaunchConfigurationRequest(template);
     yield launchConfigurationClient.post(request);
