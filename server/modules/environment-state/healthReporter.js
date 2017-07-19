@@ -59,26 +59,26 @@ function instancesOf(describeInstancesResult) {
   )(describeInstancesResult);
 }
 
-function instancesRequestFor(getAwsAccountForEnvironment, serviceHealthResults) {
+function instancesRequestFor(getAwsOptionsForEnvironment, serviceHealthResults) {
   let environmentOf = valueOfTag('environment');
   let getEnvironments = flow(
     flatMap(({ Service, Node: { Node } }) => environmentOf(Service)),
     uniq);
 
-  let getEnvAccountMapper = environments => Promise.map(environments, e => getAwsAccountForEnvironment(e).then(a => [e, a]))
-    .then(flow(fromPairs, envAccountMap => env => envAccountMap[env]));
+  let getEnvOptionsMapper = environments => Promise.map(environments, e => getAwsOptionsForEnvironment(e).then(a => [e, a]))
+    .then(flow(fromPairs, envOptionsMap => env => envOptionsMap[env]));
 
-  let groupByAccount = (accountFor, health) => flow(
+  let groupByAwsOptions = (optionsFor, health) => flow(
     flatMap(({ Service, Node: { Node } }) =>
-      environmentOf(Service).map(env => [accountFor(env), Node])),
+      environmentOf(Service).map(env => [JSON.stringify(optionsFor(env)), Node])),
     groupBy(([key]) => key),
     mapValues(flow(map(([, value]) => value), uniq))
   )(health);
 
   return Promise.resolve(serviceHealthResults)
     .then(getEnvironments)
-    .then(getEnvAccountMapper)
-    .then(accountFor => groupByAccount(accountFor, serviceHealthResults));
+    .then(getEnvOptionsMapper)
+    .then(accountFor => groupByAwsOptions(accountFor, serviceHealthResults));
 }
 
 function desiredState(desiredTopology, desiredCounts) {

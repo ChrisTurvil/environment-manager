@@ -291,13 +291,17 @@ describe('healthReporter', function () {
             }
           }
         ];
-        let accountOf = (() => {
-          let environments = { env1a: 'account1', env1b: 'account1', env2: 'account2' };
+        let getAwsOptionsForEnvironment = (() => {
+          let environments = {
+            env1a: { region: 'region1', roleArn: 'role1' },
+            env1b: { region: 'region1', roleArn: 'role1' },
+            env2: { region: 'region1', roleArn: 'role2' }
+          };
           return environment => Promise.resolve(environments[environment]);
         })();
-        sut.instancesRequestFor(accountOf, health).should.finally.eql({
-          'account1': ['node1'],
-          'account2': ['node1', 'node2']
+        sut.instancesRequestFor(getAwsOptionsForEnvironment, health).should.finally.eql({
+          '{"region":"region1","roleArn":"role1"}': ['node1'],
+          '{"region":"region1","roleArn":"role2"}': ['node1', 'node2']
         });
       });
     });
