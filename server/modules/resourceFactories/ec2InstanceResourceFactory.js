@@ -3,7 +3,7 @@
 'use strict';
 
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let Instance = require('models/Instance');
 let InstanceNotFoundError = require('modules/errors/InstanceNotFoundError.class');
 
@@ -65,11 +65,4 @@ function InstanceResource(client) {
   }
 }
 
-module.exports = {
-  canCreate: resourceDescriptor =>
-    resourceDescriptor.type.toLowerCase() === 'ec2/instance',
-
-  create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.createEC2Client(parameters.accountName).then(client => new InstanceResource(client))
-
-};
+module.exports = partition => createEC2Client(partition).then(client => new InstanceResource(client));

@@ -4,10 +4,10 @@
 
 let _ = require('lodash');
 let co = require('co');
-let resourceProvider = require('modules/resourceProvider');
+let ec2InstanceResourceFactory = require('modules/resourceFactories/ec2InstanceResourceFactory');
 
-function* getAWSInstances(accountName, instancesIds) {
-  let resource = yield resourceProvider.getInstanceByName('instances', { accountName });
+function* getAWSInstances(partition, instancesIds) {
+  let resource = yield ec2InstanceResourceFactory(partition);
 
   let filter = {
     'instance-id': instancesIds
