@@ -2,7 +2,7 @@
 
 'use strict';
 
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createIAMClient } = require('modules/amazon-client/childAccountClient');
 
 let AwsError = require('modules/errors/AwsError.class');
 let InstanceProfileNotFoundError = require('modules/errors/InstanceProfileNotFoundError.class');
@@ -34,11 +34,4 @@ function InstanceProfileResource(client) {
   }
 }
 
-module.exports = {
-  canCreate: resourceDescriptor =>
-    resourceDescriptor.type.toLowerCase() === 'iam/instanceprofiles',
-
-  create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.createIAMClient(parameters.accountName).then(client => new InstanceProfileResource(client))
-
-};
+module.exports = partition => createIAMClient(partition).then(client => new InstanceProfileResource(client));

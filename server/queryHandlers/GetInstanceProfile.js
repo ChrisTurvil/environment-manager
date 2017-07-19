@@ -2,11 +2,10 @@
 
 'use strict';
 
-let resourceProvider = require('modules/resourceProvider');
+let iamInstanceProfileResourceFactory = require('modules/resourceFactories/iamInstanceProfileResourceFactory');
 
 module.exports = function GetInstanceProfile(query) {
-  let parameters = { accountName: query.accountName };
-  return resourceProvider.getInstanceByName('instanceprofiles', parameters).then(resource =>
-    resource.get({ instanceProfileName: query.instanceProfileName })
-  );
+  return iamInstanceProfileResourceFactory(query.partition)
+    .then(resource => resource.get({ instanceProfileName: query.instanceProfileName })
+    );
 };
