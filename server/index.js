@@ -44,13 +44,13 @@ let servers;
 function start() {
   co(function* () { // eslint-disable-line func-names
     AWS.config.setPromisesDependency(global.Promise);
+    AWS.config.update({ region: config.get('EM_AWS_REGION') });
     let configurationProvider = new ConfigurationProvider();
     yield configurationProvider.init();
     yield cacheManager.flush();
 
     yield checkAppPrerequisites();
     config.logBootstrapValues();
-    AWS.config.update({ region: config.get('EM_AWS_REGION') });
 
     // eslint-disable-next-line global-require
     let mainServer = require('modules/MainServer');
