@@ -14,17 +14,17 @@ let keyNameProvider = require('modules/provisioning/launchConfiguration/keyNameP
 let imageProvider = require('modules/provisioning/launchConfiguration/imageProvider');
 
 module.exports = {
-  get(configuration, accountName, logger) {
+  get(configuration, awsOptions, logger) {
     assert(configuration, 'Expected \'configuration\' argument not to be null.');
-    assert(accountName, 'Expected \'accountName\' argument not to be null.');
+    assert(awsOptions, 'Expected \'awsOptions\' argument not to be null.');
 
     return co(function* () {
       let sliceNames = configuration.serverRole.FleetPerSlice ? ['blue', 'green'] : [null];
 
       let image = yield imageProvider.get(configuration.serverRole.AMI);
-      let keyName = yield keyNameProvider.get(configuration, accountName);
-      let iamInstanceProfile = yield iamInstanceProfileNameProvider.get(configuration, accountName);
-      let securityGroups = yield securityGroupsProvider.getFromConfiguration(configuration, image, accountName, logger);
+      let keyName = yield keyNameProvider.get(configuration, awsOptions);
+      let iamInstanceProfile = yield iamInstanceProfileNameProvider.get(configuration, awsOptions);
+      let securityGroups = yield securityGroupsProvider.getFromConfiguration(configuration, image, awsOptions, logger);
       let devices = instanceDevicesProvider.toAWS(configuration.serverRole.Volumes);
       let detailedMonitoring = isDetailedMonitoringEnabled(configuration);
       let templates = [];
