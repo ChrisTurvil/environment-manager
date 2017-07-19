@@ -4,7 +4,7 @@
 
 let async = require('async');
 let S3GetObjectRequest = require('modules/S3GetObjectRequest');
-let amazonClientFactory = require('modules/amazon-client/masterAccountClient');
+let { createS3Client } = require('modules/amazon-client/masterAccountClient');
 let sslComponentsCache = null;
 
 module.exports = function SSLComponentsRepository() {
@@ -30,7 +30,7 @@ module.exports = function SSLComponentsRepository() {
     async.waterfall([
       // Creates a new instance of S3 client
       (callback) => {
-        amazonClientFactory.createS3Client().then(
+            createS3Client().then(
           client => callback(null, client),
           error => callback(error)
         );
