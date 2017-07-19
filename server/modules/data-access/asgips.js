@@ -4,6 +4,7 @@
 
 const LOGICAL_TABLE_NAME = 'InfraAsgIPs';
 
+let { getByName: getAccount } = require('modules/awsAccounts');
 let { createDynamoClient: DocumentClient } = require('modules/amazon-client/childAccountClient');
 let { getTableName: physicalTableName } = require('modules/awsResourceNameProvider');
 
@@ -11,14 +12,16 @@ const commonParams = Object.freeze({ TableName: physicalTableName(LOGICAL_TABLE_
 
 function get(account, key) {
   let params = Object.assign({ Key: key }, commonParams);
-  return DocumentClient(account)
+  return getAccount(account)
+    .then(({ RoleArn: roleArn }) => DocumentClient({ roleArn }))
     .then(dynamo => dynamo.get(params).promise())
     .then(({ Item }) => Item);
 }
 
 function put(account, item) {
   let params = Object.assign({ Item: item }, commonParams);
-  return DocumentClient(account)
+  return getAccount(account)
+    .then(({ RoleArn: roleArn }) => DocumentClient({ roleArn }))
     .then(dynamo => dynamo.put(params).promise());
 }
 
