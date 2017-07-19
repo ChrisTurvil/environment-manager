@@ -2,10 +2,9 @@
 
 'use strict';
 
-let snsTopicClientFactory = require('modules/clientFactories/snsTopicClientFactory');
+let snsTopicClient = require('modules/clientFactories/SNSTopicClient');
 
 module.exports = function GetTopicQueryHandler(query) {
-  return snsTopicClientFactory
-    .create({ accountName: query.accountName })
+  return snsTopicClient(query.partition)
     .then(client => client.get({ topicName: query.topicName }));
 };

@@ -4,15 +4,17 @@
 
 let _ = require('lodash');
 let co = require('co');
-let configurationCache = require('modules/configurationCache');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
+let { account } = require('modules/amazon-client/partition');
 let deployments = require('modules/data-access/deployments');
 let fp = require('lodash/fp');
 let { Clock, Instant, LocalDate, ZoneId } = require('js-joda');
 let sender = require('modules/sender');
 
-function getTargetAccountName(deployment) {
-  return configurationCache.getEnvironmentTypeByName(fp.get(['Value', 'EnvironmentType'])(deployment))
-    .then(fp.get(['AWSAccountName']));
+function getTargetPartition(deployment) {
+  return Promise.resolve(deployment)
+    .then(fp.get(['Value', 'EnvironmentName']))
+    .then(getPartitionsForEnvironment);
 }
 
 function mapDeployment(deployment) {
@@ -58,8 +60,8 @@ function queryDeployment({ key }) {
       if (result === null) {
         return null;
       } else {
-        return getTargetAccountName(result).then((accountName) => {
-          result.AccountName = accountName;
+        return getTargetPartition(result).then((partition) => {
+          result.AccountName = account(partition);
           if (Array.isArray(result.Value.ExecutionLog)) {
             result.Value.ExecutionLog = result.Value.ExecutionLog.join('\n');
           }

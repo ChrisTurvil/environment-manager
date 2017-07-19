@@ -6,17 +6,16 @@ let co = require('co');
 let AwsError = require('modules/errors/AwsError.class');
 let TopicNotFoundError = require('modules/errors/TopicNotFoundError.class');
 let config = require('config');
-let awsAccounts = require('modules/awsAccounts');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { account } = require('modules/amazon-client/partition');
+let { createSNSClient } = require('modules/amazon-client/childAccountClient');
 
 const AWS_REGION = config.get('EM_AWS_REGION');
 
-module.exports = function SNSTopicClient(accountName) {
+module.exports = function SNSTopicClient(partition) {
   this.get = function (parameters) {
     return co(function* () {
-      let awsAccount = yield awsAccounts.getByName(accountName);
-      let topicArn = yield getTopicArnByConvention(parameters.topicName, awsAccount);
-      let client = yield amazonClientFactory.createSNSClient(accountName);
+      let topicArn = yield getTopicArnByConvention(parameters.topicName, partition);
+      let client = yield createSNSClient(partition);
       let topic = yield client.getTopicAttributes({ TopicArn: topicArn }).promise().then(
         response => Promise.resolve(response.Attributes),
         error => Promise.reject(error.code === 'NotFound' ?
@@ -27,8 +26,8 @@ module.exports = function SNSTopicClient(accountName) {
     });
   };
 
-  function getTopicArnByConvention(topicName, awsAccount) {
-    let topicArn = `arn:aws:sns:${AWS_REGION}:${awsAccount.AccountNumber}:${topicName}`;
+  function getTopicArnByConvention(topicName, { region, roleArn }) {
+    let topicArn = `arn:aws:sns:${region}:${account(roleArn)}:${topicName}`;
     return Promise.resolve(topicArn);
   }
 };

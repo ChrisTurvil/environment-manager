@@ -2,31 +2,36 @@
 
 'use strict';
 
+let Promise = require('bluebird');
 let S3GetObjectRequest = require('modules/S3GetObjectRequest');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createS3Client } = require('modules/amazon-client/childAccountClient');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
+let { account } = require('modules/amazon-client/partition');
 let sender = require('modules/sender');
 
-function getNode({ deploymentId, instanceId, accountName, environment }) {
-  let query = {
-    name: 'GetTargetState',
-    key: `deployments/${deploymentId}/nodes/${instanceId}`,
-    accountName,
-    environment,
-    recurse: false
-  };
-
-  return sender.sendQuery({ query }).then((node) => {
+function getNode({ deploymentId, instanceId, environment }) {
+  let partitionP = getPartitionsForEnvironment(environment);
+  let nodeP = partitionP
+    .then(partition => ({
+      name: 'GetTargetState',
+      key: `deployments/${deploymentId}/nodes/${instanceId}`,
+      accountName: account(partition),
+      environment,
+      recurse: false
+    })).then(query => sender.sendQuery({ query }));
+  return Promise.join(partitionP, nodeP, (partition, node) => {
     let s3Details = parseBucketAndPathFromS3Url(node.value.Log);
-    return fetchS3Object(accountName, s3Details);
-  }, (error) => {
-    if (error.message.match(/Key.*has not been found/)) {
-      throw new Error(`The service deployment ${deploymentId} hasn\'t started on instance ${instanceId}.`);
-    } else throw error;
-  });
+    return fetchS3Object(partition, s3Details);
+  })
+    .catch((error) => {
+      if (error.message.match(/Key.*has not been found/)) {
+        throw new Error(`The service deployment ${deploymentId} hasn\'t started on instance ${instanceId}.`);
+      } else throw error;
+    });
 }
 
-function fetchS3Object(account, s3Details) {
-  return amazonClientFactory.createS3Client(account).then((client) => {
+function fetchS3Object(partition, s3Details) {
+  return createS3Client(partition).then((client) => {
     let s3Request = new S3GetObjectRequest(client, s3Details);
     return s3Request.execute()
       .then(result => result.Body.toString());
