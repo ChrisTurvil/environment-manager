@@ -45,9 +45,16 @@
           "minItems": 1,
           "uniqueItems": true
         },
-        "SecurityTokenPath": {"$ref": "#/definitions/s3Location"}
+        "SecurityTokenPath": {
+          "$ref": "#/definitions/s3Location"
+        }
       },
-      "required": ["DataCenter", "Port", "Servers", "SecurityTokenPath"]
+      "required": [
+        "DataCenter",
+        "Port",
+        "Servers",
+        "SecurityTokenPath"
+      ]
     },
     "DeploymentBucket": {
       "type": "string",
@@ -78,16 +85,49 @@
       "type": "string",
       "minLength": 1
     },
+    "Region": {
+      "type": "string",
+      "enum": [
+        "ap-northeast-1",
+        "ap-northeast-2",
+        "ap-south-1",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ca-central-1",
+        "eu-central-1",
+        "eu-west-1",
+        "eu-west-2",
+        "sa-east-1",
+        "us-east-1",
+        "us-east-2",
+        "us-west-1",
+        "us-west-2"
+      ]
+    },
     "Subnets": {
       "type": "object",
       "properties": {
-        "PrivateApp": {"$ref": "#/definitions/subnet"},
-        "PrivateLB": {"$ref": "#/definitions/subnet"},
-        "PrivateSecure": {"$ref": "#/definitions/subnet"},
-        "PrivateShared": {"$ref": "#/definitions/subnet"},
-        "Public": {"$ref": "#/definitions/subnet"},
-        "PublicLB": {"$ref": "#/definitions/subnet"},
-        "PublicSecure": {"$ref": "#/definitions/subnet"}
+        "PrivateApp": {
+          "$ref": "#/definitions/subnet"
+        },
+        "PrivateLB": {
+          "$ref": "#/definitions/subnet"
+        },
+        "PrivateSecure": {
+          "$ref": "#/definitions/subnet"
+        },
+        "PrivateShared": {
+          "$ref": "#/definitions/subnet"
+        },
+        "Public": {
+          "$ref": "#/definitions/subnet"
+        },
+        "PublicLB": {
+          "$ref": "#/definitions/subnet"
+        },
+        "PublicSecure": {
+          "$ref": "#/definitions/subnet"
+        }
       },
       "minProperties": 1
     },
@@ -97,7 +137,17 @@
       "maxLength": 255
     }
   },
-  "required": ["SchemaVersion", "AWSAccountName", "AWSAccountNumber", "Consul", "DeploymentBucket", "LoadBalancers", "Subnets", "VpcId"],
+  "required": [
+    "SchemaVersion",
+    "AWSAccountName",
+    "AWSAccountNumber",
+    "Consul",
+    "DeploymentBucket",
+    "LoadBalancers",
+    "Region",
+    "Subnets",
+    "VpcId"
+  ],
   "definitions": {
     "subnet": {
       "type": "object",
@@ -111,7 +161,10 @@
           "type": "boolean"
         }
       },
-      "required": ["AvailabilityZoneA", "AvailabilityZoneB"]
+      "required": [
+        "AvailabilityZoneA",
+        "AvailabilityZoneB"
+      ]
     },
     "s3Location": {
       "type": "object",
