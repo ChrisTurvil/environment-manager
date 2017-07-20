@@ -2,8 +2,7 @@
 
 'use strict';
 
-let aws = require('aws-sdk');
-aws.config.update({ region: 'eu-west-1' });
+let { SNS } = require('aws-sdk');
 
 module.exports = (event) => {
   if (!event.TargetArn) {
@@ -22,7 +21,7 @@ module.exports = (event) => {
     });
   }
 
-  const sns = new aws.SNS();
+  const sns = new SNS();
 
   return new Promise((resolve, reject) => {
     sns.publish(event, (err, result) => {

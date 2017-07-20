@@ -1,7 +1,6 @@
 'use strict';
 
-let aws = require('aws-sdk');
-aws.config.update({ region: 'eu-west-1' });
+let { SNS } = require('aws-sdk');
 
 function passSafetyNet(name) {
   let root = name.split('/')[0];
@@ -14,7 +13,7 @@ function passSafetyNet(name) {
 }
 
 module.exports = (name) => {
-  const sns = new aws.SNS();
+  const sns = new SNS();
   const valid = /^[a-zA-Z0-9\-\_]+$/;
 
   return new Promise((resolve, reject) => {
