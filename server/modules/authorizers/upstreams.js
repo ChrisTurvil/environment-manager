@@ -5,7 +5,6 @@
 let co = require('co');
 let configEnvironments = require('modules/data-access/configEnvironments');
 let loadBalancerUpstreams = require('modules/data-access/loadBalancerUpstreams');
-let Environment = require('models/Environment');
 let logger = require('modules/logger');
 
 function getUpstream(upstreamName) {
@@ -23,7 +22,7 @@ function getModifyPermissionsForEnvironment(environmentName) {
   }));
 }
 
-function getEnvironmentPermissionsPromise(upstreamName, environmentName, accountName, method) {
+function getEnvironmentPermissionsPromise(upstreamName, environmentName, method) {
   if (method === 'POST') {
     return getModifyPermissionsForEnvironment(environmentName);
   }
@@ -42,20 +41,15 @@ function getEnvironmentPermissionsPromise(upstreamName, environmentName, account
 exports.getRules = (request) => {
   let r = /^\/(.*)\/config$/;
   let upstreamName = request.params.key || request.params.name || request.params.body.key;
-  let accountName = request.params.account;
 
   return co(function* () {
     let body = request.params.body || request.body;
     logger.debug('Upstreams authorizer', { body, url: request.url });
     let environmentName = upstreamName.substr(1, 3);
 
-    if (accountName === undefined) {
-      accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    }
-
     let match = r.exec(upstreamName);
-    let path = `/${request.params.account}/config/lbUpstream/${match[1]}`;
-    let getEnvironmentPermissions = getEnvironmentPermissionsPromise(upstreamName, environmentName, accountName, request.method);
+    let path = `/config/lbUpstream/${match[1]}`;
+    let getEnvironmentPermissions = getEnvironmentPermissionsPromise(upstreamName, environmentName, request.method);
 
     return getEnvironmentPermissions.then(envPermissions => [{
       resource: path,
