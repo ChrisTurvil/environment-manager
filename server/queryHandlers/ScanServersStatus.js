@@ -9,6 +9,7 @@ let logger = require('modules/logger');
 let sender = require('modules/sender');
 let AutoScalingGroup = require('models/AutoScalingGroup');
 let Instance = require('models/Instance');
+let ScanImagesInAllPartitions = require('queryHandlers/ScanImagesInAllPartitions');
 
 module.exports = co.wrap(ScanServersStatusQueryHandler);
 
@@ -203,14 +204,11 @@ function byStatus(status) {
 function getAllImages() {
   let startTime = moment.utc();
 
-  return sender.sendQuery({
-    query: {
-      name: 'ScanCrossAccountImages'
-    }
-  }).then((result) => {
-    let duration = moment.duration(moment.utc().diff(startTime)).asMilliseconds();
-    logger.debug(`server-status-query: AllImagesQuery took ${duration}ms`);
-    return result;
-  });
+  return ScanImagesInAllPartitions()
+    .then((result) => {
+      let duration = moment.duration(moment.utc().diff(startTime)).asMilliseconds();
+      logger.debug(`server-status-query: AllImagesQuery took ${duration}ms`);
+      return result;
+    });
 }
 

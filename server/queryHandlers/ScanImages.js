@@ -12,7 +12,7 @@ let assert = require('assert');
  * AMI version (semver, descending).
  */
 function* handler(query) {
-  assert(query.accountName);
+  assert(query.partition);
   let resource = ec2ImageResourceFactory(query.partition);
   let images = yield resource.all({ filter: query.filter });
   return imageSummary.rank(images.map(imageSummary.summaryOf).sort(imageSummary.compare));

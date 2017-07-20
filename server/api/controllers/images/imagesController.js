@@ -2,34 +2,28 @@
 
 'use strict';
 
-let sender = require('modules/sender');
-let _ = require('lodash');
+let { getByName: getAccount } = require('modules/awsAccounts');
+let { scanPartitions } = require('modules/amazon-client/awsConfiguration');
+let { account } = require('modules/amazon-client/partition');
+let { filter, flatten } = require('lodash/fp');
+let ScanImages = require('queryHandlers/ScanImages');
 
 function getImages(req, res, next) {
   const accountName = req.swagger.params.account.value;
   const stable = req.swagger.params.stable.value;
-  let query;
+  let query = { filter: {} };
 
-  if (accountName === undefined) {
-    query = {
-      name: 'ScanCrossAccountImages',
-      filter: {}
-    };
-  } else {
-    query = {
-      name: 'ScanImages',
-      accountName,
-      filter: {}
-    };
-  }
+  let partitionFilterP = accountName !== undefined
+    ? getAccount(accountName).then(({ AccountNumber }) => filter(p => account(p) === `${AccountNumber}`))
+    : Promise.resolve(ps => ps);
 
-  sender.sendQuery({ query }).then((data) => {
-    if (stable !== undefined) {
-      res.json(_.filter(data, { IsStable: stable }));
-    } else {
-      res.json(data);
-    }
-  }).catch(next);
+  let partitionsP = scanPartitions();
+
+  return Promise.join(partitionsP, partitionFilterP, (partitions, filterPartitions) => filterPartitions(partitions))
+    .then(ps => Promise.map(ps, partition => ScanImages(Object.assign({}, query, { partition }))))
+    .then(flatten)
+    .then((stable !== undefined ? filter(({ IsStable }) => IsStable === stable) : ps => ps))
+    .then(ps => res.json(ps));
 }
 
 module.exports = {

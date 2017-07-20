@@ -4,7 +4,7 @@
 
 let _ = require('lodash');
 let co = require('co');
-let ScanCrossAccountInstances = require('queryHandlers/ScanCrossAccountInstances');
+let ScanInstancesInAllPartitions = require('queryHandlers/ScanInstancesInAllPartitions');
 let ec2InstanceClientFactory = require('modules/clientFactories/ec2InstanceClientFactory');
 let Environment = require('models/Environment');
 let moment = require('moment');
@@ -40,7 +40,7 @@ class Instance {
 
   static getById(instanceId) {
     let filter = { 'instance-id': instanceId };
-    return ScanCrossAccountInstances({ filter }).then(list => new TaggableInstance(list[0]));
+    return ScanInstancesInAllPartitions({ filter }).then(list => new TaggableInstance(list[0]));
   }
 
   static getAllByEnvironment(environmentName) {

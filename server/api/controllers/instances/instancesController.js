@@ -5,7 +5,9 @@
 let _ = require('lodash');
 let co = require('co');
 let ScanInstances = require('queryHandlers/ScanInstances');
-let ScanCrossAccountInstances = require('queryHandlers/ScanCrossAccountInstances');
+let { getByName: getAccount } = require('modules/awsAccounts');
+let { scanPartitions } = require('modules/amazon-client/awsConfiguration');
+let { account } = require('modules/amazon-client/partition');
 let EnterAutoScalingGroupInstancesToStandby = require('commands/asg/EnterAutoScalingGroupInstancesToStandby');
 let ExitAutoScalingGroupInstancesFromStandby = require('commands/asg/ExitAutoScalingGroupInstancesFromStandby');
 let asgips = require('modules/data-access/asgips');
@@ -78,8 +80,15 @@ function getInstances(req, res, next) {
       filter = null;
     }
 
-    let handler = accountName !== undefined ? ScanInstances : ScanCrossAccountInstances;
-    let list = yield handler({ accountName, filter });
+    let partitionFilterP = accountName !== undefined
+      ? getAccount(accountName).then(({ AccountNumber }) => fp.filter(p => account(p) === `${AccountNumber}`))
+      : Promise.resolve(ps => ps);
+
+    let partitionsP = scanPartitions();
+
+    let list = yield Promise.join(partitionsP, partitionFilterP, (partitions, filterPartitions) => filterPartitions(partitions))
+      .then(ps => Promise.map(ps, partition => ScanInstances({ filter, partition })))
+      .then(fp.flatten);
 
     // Note: be wary of performance - this filters instances AFTER fetching all from AWS
     if (since !== undefined) {

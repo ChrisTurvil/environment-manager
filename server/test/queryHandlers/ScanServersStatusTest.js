@@ -67,7 +67,7 @@ describe('ScanServersStatus', function() {
     sendQuery: function(value) {
       let query = value.query;
       switch(query.name) {
-        case 'ScanCrossAccountImages':
+        case 'ScanImagesInAllPartitions':
           return Promise.resolve([mockImage]);
           break;
         case 'GetNode':

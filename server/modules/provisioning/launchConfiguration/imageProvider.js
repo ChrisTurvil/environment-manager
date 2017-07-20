@@ -3,7 +3,7 @@
 'use strict';
 
 let assert = require('assert');
-let sender = require('modules/sender');
+let ScanImagesInAllPartitions = require('queryHandlers/ScanImagesInAllPartitions');
 let Image = require('modules/provisioning/Image.class');
 let ImageNotFoundError = require('modules/errors/ImageNotFoundError.class');
 
@@ -34,10 +34,7 @@ function getImage(params) {
   if (params.id) filter['image-id'] = params.id;
   if (params.name) filter.name = params.name;
 
-  let query = { name: 'ScanCrossAccountImages', filter };
-
-  return sender
-    .sendQuery({ query })
+  return ScanImagesInAllPartitions({ filter })
     .then(amiImages =>
       (amiImages.length ?
         Promise.resolve(new Image(amiImages[0])) :
@@ -47,12 +44,7 @@ function getImage(params) {
 }
 
 function getLatestImageByType(imageType, includeUnstable) {
-  let query = {
-    name: 'ScanCrossAccountImages'
-  };
-
-  return sender
-    .sendQuery({ query })
+  return ScanImagesInAllPartitions()
     .then((amiImages) => {
       let isLatest = includeUnstable ? image => image.IsLatest : image => image.IsLatestStable;
       let latestImage = amiImages.find(image => image.AmiType === imageType && isLatest(image));

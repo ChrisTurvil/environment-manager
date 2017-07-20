@@ -4,7 +4,7 @@
 
 let _ = require('lodash');
 let co = require('co');
-let getAllASGs = require('queryHandlers/ScanCrossAccountAutoScalingGroups');
+let getAllASGs = require('queryHandlers/ScanAutoScalingGroupsInAllPartitions');
 let getAccountASGs = require('queryHandlers/ScanAutoScalingGroups');
 let getASG = require('queryHandlers/GetAutoScalingGroup');
 let AutoScalingGroup = require('models/AutoScalingGroup');
