@@ -5,9 +5,8 @@
 let _ = require('lodash');
 let co = require('co');
 let ScanInstances = require('queryHandlers/ScanInstances');
-let { getByName: getAccount } = require('modules/awsAccounts');
-let { scanPartitions } = require('modules/amazon-client/awsConfiguration');
-let { account } = require('modules/amazon-client/partition');
+let { getPartitionsForEnvironment, scanPartitions } = require('modules/amazon-client/awsConfiguration');
+let mapAcrossPartitions = require('modules/queryHandlersUtil/mapAcrossPartitions');
 let EnterAutoScalingGroupInstancesToStandby = require('commands/asg/EnterAutoScalingGroupInstancesToStandby');
 let ExitAutoScalingGroupInstancesFromStandby = require('commands/asg/ExitAutoScalingGroupInstancesFromStandby');
 let asgips = require('modules/data-access/asgips');
@@ -21,6 +20,7 @@ let ScanInstancesScheduleStatus = require('queryHandlers/ScanInstancesScheduleSt
 let fp = require('lodash/fp');
 let merge = require('modules/merge');
 const sns = require('modules/sns/EnvironmentManagerEvents');
+let getPartitionsInAccount = require('modules/amazon-client/getPartitionsInAccount');
 
 /* The tags that should be added to each instance as properties.
  * If the instance already has a property with one of these names
@@ -80,15 +80,8 @@ function getInstances(req, res, next) {
       filter = null;
     }
 
-    let partitionFilterP = accountName !== undefined
-      ? getAccount(accountName).then(({ AccountNumber }) => fp.filter(p => account(p) === `${AccountNumber}`))
-      : Promise.resolve(ps => ps);
-
-    let partitionsP = scanPartitions();
-
-    let list = yield Promise.join(partitionsP, partitionFilterP, (partitions, filterPartitions) => filterPartitions(partitions))
-      .then(ps => Promise.map(ps, partition => ScanInstances({ filter, partition })))
-      .then(fp.flatten);
+    let partitionsP = accountName !== undefined ? getPartitionsInAccount(accountName) : scanPartitions();
+    let list = yield partitionsP.then(mapAcrossPartitions(partition => ScanInstances({ filter, partition })));
 
     // Note: be wary of performance - this filters instances AFTER fetching all from AWS
     if (since !== undefined) {
@@ -188,7 +181,8 @@ function putInstanceMaintenance(req, res, next) {
      */
     let handler = enable ? EnterAutoScalingGroupInstancesToStandby : ExitAutoScalingGroupInstancesFromStandby;
     try {
-      yield handler({ accountName, autoScalingGroupName, instanceIds });
+      let partition = yield getPartitionsForEnvironment(environmentName);
+      yield handler({ partition, autoScalingGroupName, instanceIds });
     } catch (err) {
       if (err.message.indexOf('is not in Standby') !== -1 || err.message.indexOf('cannot be exited from standby as its LifecycleState is InService') !== -1) {
         logger.warn(`ASG ${autoScalingGroupName} instance ${id} is already in desired state for ASG Standby: ${enable}`);
@@ -245,13 +239,10 @@ function getScheduleActions(req, res, next) {
   const accountName = req.swagger.params.account.value;
   const dateTime = req.swagger.params.date.value;
 
-  let query = {
-    name: 'ScanInstancesScheduleStatus',
-    accountName,
-    dateTime
-  };
+  let partitionsP = accountName !== undefined ? getPartitionsInAccount(accountName) : scanPartitions();
 
-  ScanInstancesScheduleStatus(query)
+  return partitionsP
+    .then(mapAcrossPartitions(partition => ScanInstancesScheduleStatus({ dateTime, partition })))
     .then(actions => res.json(actions))
     .catch(next);
 }

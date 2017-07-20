@@ -11,7 +11,7 @@ module.exports = function CreateLaunchConfigurationCommandHandler(command) {
 
   assert(command, 'Expected "command" argument not to be null.');
   assert(command.template, 'Expected "command" argument to contain "template" property not null.');
-  assert(command.partition, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(command.partition, 'Expected "command" argument to contain "partition" property not null or empty.');
 
   return co(function* () {
     let template = command.template;

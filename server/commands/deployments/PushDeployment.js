@@ -4,19 +4,20 @@
 
 let co = require('co');
 let DeploymentCommandHandlerLogger = require('commands/deployments/DeploymentCommandHandlerLogger');
-let sender = require('modules/sender');
 let consulClient = require('modules/consul-client');
 let serverRoleProvider = require('modules/deployment/serverRoleDefinition');
 let serviceInstallationProvider = require('modules/deployment/serviceInstallationDefinition');
 let serviceDefinitionProvider = require('modules/deployment/serviceDefinition');
 let serviceDeploymentProvider = require('modules/deployment/serviceDeploymentDefinition');
 let deploymentDefinitionProvider = require('modules/deployment/deploymentDefinition');
+let UpdateTargetState = require('commands/services/UpdateTargetState');
 
-module.exports = function PushDeploymentCommandHandler(command) {
-  const logger = new DeploymentCommandHandlerLogger(command);
-  const deployment = command.deployment;
-  const s3Path = command.s3Path;
-  const expectedNodeDeployments = command.expectedNodeDeployments;
+module.exports = function PushDeploymentCommandHandler({
+  deployment,
+  expectedNodeDeployments,
+  s3Path
+}) {
+  const logger = new DeploymentCommandHandlerLogger(deployment);
 
   return co(function* () {
     let consulConfig = yield consulClient.createConfig({ environment: deployment.environmentName });
@@ -31,11 +32,11 @@ module.exports = function PushDeploymentCommandHandler(command) {
     let serviceDeploymentDefinition = yield serviceDeploymentProvider.getKeyValue(deployment, expectedNodeDeployments);
 
     yield [
-      updateTargetState(command, serviceDefinition),
-      updateTargetState(command, serverRoleDefinition),
-      updateTargetState(command, serviceInstallation),
-      updateTargetState(command, deploymentDefinition),
-      updateTargetState(command, serviceDeploymentDefinition)
+      updateTargetState(deployment, serviceDefinition),
+      updateTargetState(deployment, serverRoleDefinition),
+      updateTargetState(deployment, serviceInstallation),
+      updateTargetState(deployment, deploymentDefinition),
+      updateTargetState(deployment, serviceDeploymentDefinition)
     ];
 
     logger.info('Consul metadata has been updated');
@@ -45,15 +46,6 @@ module.exports = function PushDeploymentCommandHandler(command) {
   });
 };
 
-function updateTargetState(command, keyValue, options) {
-  return sender.sendCommand({
-    command: {
-      name: 'UpdateTargetState',
-      environment: command.deployment.environmentName,
-      key: keyValue.key,
-      value: keyValue.value,
-      options
-    },
-    parent: command
-  });
+function updateTargetState({ deploymentId, environmentName: environment }, { key, value }) {
+  return UpdateTargetState({ deploymentId, environment, key, value });
 }

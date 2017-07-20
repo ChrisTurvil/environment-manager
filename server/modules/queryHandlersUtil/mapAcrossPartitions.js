@@ -4,12 +4,10 @@
 
 let Promise = require('bluebird');
 let { flatten } = require('lodash/fp');
-let { scanPartitions } = require('modules/amazon-client/awsConfiguration');
 let { account } = require('modules/amazon-client/partition');
 
-function invoke(fn) {
-  return Promise.map(scanPartitions(), p => Object.assign(fn(p), { AccountName: account(p), Region: p.region }))
+let invoke = fn => partitions =>
+  Promise.map(partitions, p => Object.assign(fn(p), { AccountName: account(p), partition: p, Region: p.region }))
     .then(flatten);
-}
 
 module.exports = invoke;

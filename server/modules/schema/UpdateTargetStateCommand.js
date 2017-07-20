@@ -14,13 +14,9 @@ module.exports = {
     self: {
       type: 'object',
       properties: {
-        key: { $ref: 'ConsulKey' },
-        name: {
-          type: 'string',
-          pattern: '^UpdateTargetState$'
-        }
+        key: { $ref: 'ConsulKey' }
       },
-      required: ['key', 'name', 'value']
+      required: ['key', 'value']
     }
   }
 };

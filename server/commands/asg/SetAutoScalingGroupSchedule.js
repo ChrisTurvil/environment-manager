@@ -15,7 +15,7 @@ let AutoScalingGroup = require('models/AutoScalingGroup');
 module.exports = function SetAutoScalingGroupScheduleCommandHandler(command) {
   return co(function* () {
     let schedule = command.schedule;
-    let accountName = command.accountName;
+    let { partition } = command;
     let autoScalingGroupName = command.autoScalingGroupName;
     let propagateToInstances = command.propagateToInstances;
 
@@ -43,17 +43,17 @@ module.exports = function SetAutoScalingGroupScheduleCommandHandler(command) {
       autoScalingGroupName,
       schedule,
       scalingSchedule,
-      accountName
+      partition
     );
 
     if (propagateToInstances) {
-      let autoScalingGroup = yield AutoScalingGroup.getByName(accountName, autoScalingGroupName);
+      let autoScalingGroup = yield AutoScalingGroup.getByName(partition, autoScalingGroupName);
       let instanceIds = autoScalingGroup.Instances.map(instance => instance.InstanceId);
 
       result.ChangedInstances = yield setEC2InstancesScheduleTag(
         instanceIds,
         schedule,
-        accountName
+        partition
       );
     }
 
@@ -61,10 +61,10 @@ module.exports = function SetAutoScalingGroupScheduleCommandHandler(command) {
   });
 };
 
-function setAutoScalingGroupSchedule(autoScalingGroupName, schedule, scalingSchedule, accountName) {
-  return autoScalingGroupClientFactory.create({ accountName }).then((client) => {
-    let setScheduleTask = setAutoScalingGroupScalingSchedule(client, autoScalingGroupName, scalingSchedule, accountName);
-    let setTagsTask = setAutoScalingGroupScheduleTag(client, autoScalingGroupName, schedule, accountName);
+function setAutoScalingGroupSchedule(autoScalingGroupName, schedule, scalingSchedule, partition) {
+  return autoScalingGroupClientFactory.create({ partition }).then((client) => {
+    let setScheduleTask = setAutoScalingGroupScalingSchedule(client, autoScalingGroupName, scalingSchedule, partition);
+    let setTagsTask = setAutoScalingGroupScheduleTag(client, autoScalingGroupName, schedule, partition);
 
     return Promise
       .all([setScheduleTask, setTagsTask])
@@ -72,7 +72,7 @@ function setAutoScalingGroupSchedule(autoScalingGroupName, schedule, scalingSche
   });
 }
 
-function setAutoScalingGroupScheduleTag(client, autoScalingGroupName, schedule, accountName) {
+function setAutoScalingGroupScheduleTag(client, autoScalingGroupName, schedule, partition) {
   let parameters = {
     name: autoScalingGroupName,
     tagKey: 'Schedule',
@@ -82,7 +82,7 @@ function setAutoScalingGroupScheduleTag(client, autoScalingGroupName, schedule, 
   return client.setTag(parameters);
 }
 
-function setAutoScalingGroupScalingSchedule(client, autoScalingGroupName, newScheduledActions, accountName) {
+function setAutoScalingGroupScalingSchedule(client, autoScalingGroupName, newScheduledActions, partition) {
   return co(function* () {
     let existingScheduledActions = yield getScheduledActions(client, autoScalingGroupName);
     yield existingScheduledActions.map(action => deleteScheduledAction(client, action));
@@ -118,9 +118,9 @@ function deleteScheduledAction(client, action) {
   return client.deleteScheduledAction(parameters);
 }
 
-function setEC2InstancesScheduleTag(instanceIds, schedule, accountName) {
+function setEC2InstancesScheduleTag(instanceIds, schedule, partition) {
   if (!instanceIds.length) return Promise.resolve();
-  return ec2InstanceClientFactory.create({ accountName }).then((client) => {
+  return ec2InstanceClientFactory.create({ partition }).then((client) => {
     let parameters = {
       instanceIds,
       tagKey: 'Schedule',

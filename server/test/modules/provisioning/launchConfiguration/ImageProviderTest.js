@@ -50,7 +50,7 @@ describe("ImageProvider", () => {
         senderMock.sendQuery.called.should.be.true();
         senderMock.sendQuery.getCall(0).args[0].should.match({
           query: {
-            name: "ScanCrossAccountImages",
+            name: "ScanImagesInAllPartitions",
             filter: {
               name: imageNameOrType
             }
@@ -128,7 +128,7 @@ describe("ImageProvider", () => {
         senderMock.sendQuery.called.should.be.true();
         senderMock.sendQuery.getCall(0).args[0].should.match({
           query: {
-            name: "ScanCrossAccountImages"
+            name: "ScanImagesInAllPartitions"
           }
         });
       });

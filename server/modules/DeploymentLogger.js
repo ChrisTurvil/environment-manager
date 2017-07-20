@@ -11,7 +11,7 @@ let Enums = require('Enums');
 let logger = require('modules/logger');
 
 module.exports = {
-  started(deployment, accountName) {
+  started(deployment) {
     let record = {
       AccountName: deployment.accountName,
       DeploymentID: deployment.id,
@@ -20,6 +20,7 @@ module.exports = {
         EnvironmentName: deployment.environmentName,
         EnvironmentType: deployment.environmentTypeName,
         OwningCluster: deployment.clusterName,
+        Region: deployment.region || null,
         SchemaVersion: 2,
         ServiceName: deployment.serviceName,
         ServiceSlice: deployment.serviceSlice,
@@ -35,7 +36,7 @@ module.exports = {
     };
 
     return deployments.create(record).then(() => {
-      deploymentLogsStreamer.log(deployment.id, accountName, 'Deployment started');
+      deploymentLogsStreamer.log(deployment.id, 'Deployment started');
     });
   },
 
@@ -43,34 +44,34 @@ module.exports = {
     deploymentLogsStreamer.log(deploymentId, message);
   },
 
-  updateStatus(deploymentStatus, newStatus) {
+  updateStatus({ deploymentId, environmentName, nodesDeployment }, newStatus) {
     let logError = error => logger.error(error);
 
-    logger.debug(`Updating deployment '${deploymentStatus.deploymentId}' status to '${newStatus.name}'`);
+    logger.debug(`Updating deployment '${deploymentId}' status to '${newStatus.name}'`);
 
     /**
      * flush log entries before changing status. A status change may move
      * the record to another table. If this occurs before the log entries
      * are flushed then the log entries may not be written.
      */
-    return updateDeploymentTargetState(deploymentStatus, newStatus)
+    return updateDeploymentTargetState(deploymentId, environmentName, newStatus)
       .catch(logError)
-      .then(() => deploymentLogsStreamer.log(deploymentStatus.deploymentId, newStatus.reason))
-      .then(() => deploymentLogsStreamer.flush(deploymentStatus.deploymentId))
+      .then(() => deploymentLogsStreamer.log(deploymentId, newStatus.reason))
+      .then(() => deploymentLogsStreamer.flush(deploymentId))
       .catch(logError)
-      .then(() => updateDeploymentDynamoTable(deploymentStatus, newStatus))
+      .then(() => updateDeploymentDynamoTable(deploymentId, nodesDeployment, newStatus))
       .catch(logError);
   }
 };
 
-function updateDeploymentDynamoTable(deploymentStatus, newStatus) {
+function updateDeploymentDynamoTable(deploymentId, nodesDeployment, newStatus) {
   let { Success, InProgress } = Enums.DEPLOYMENT_STATUS;
   let running = newStatus.name === InProgress;
   let succeeded = newStatus.name === Success;
 
   let updateExpression = ['update',
     ['set', ['at', 'Value', 'Status'], ['val', newStatus.name]],
-    ['set', ['at', 'Value', 'Nodes'], ['val', deploymentStatus.nodesDeployment || []]]
+    ['set', ['at', 'Value', 'Nodes'], ['val', nodesDeployment || []]]
   ];
 
   if (!running && !succeeded && newStatus.reason !== undefined) {
@@ -80,15 +81,15 @@ function updateDeploymentDynamoTable(deploymentStatus, newStatus) {
     updateExpression.push(['set', ['at', 'Value', 'EndTimestamp'], ['val', new Date().toISOString()]]);
   }
 
-  return deployments.update({ key: { DeploymentID: deploymentStatus.deploymentId }, updateExpression });
+  return deployments.update({ key: { DeploymentID: deploymentId }, updateExpression });
 }
 
-function updateDeploymentTargetState(deploymentStatus, newStatus) {
+function updateDeploymentTargetState(deploymentId, environmentName, newStatus) {
   let command = {
-    deploymentId: deploymentStatus.deploymentId,
+    deploymentId,
     name: 'UpdateTargetState',
-    environment: deploymentStatus.environmentName,
-    key: `deployments/${deploymentStatus.deploymentId}/overall_status`,
+    environment: environmentName,
+    key: `deployments/${deploymentId}/overall_status`,
     value: newStatus.name
   };
 

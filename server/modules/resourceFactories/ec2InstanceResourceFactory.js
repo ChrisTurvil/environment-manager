@@ -7,7 +7,7 @@ let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let Instance = require('models/Instance');
 let InstanceNotFoundError = require('modules/errors/InstanceNotFoundError.class');
 
-function InstanceResource(client) {
+function InstanceResource(partition, client) {
   function flatInstances(data) {
     let instances = reservation => reservation.Instances;
     return _(data.Reservations).map(instances).compact().flatten().value();
@@ -30,7 +30,7 @@ function InstanceResource(client) {
         instances = instances.concat(flatInstances(data));
 
         if (!data.NextToken) {
-          return _.map(instances, state => new Instance(state));
+          return _.map(instances, state => new Instance(Object.assign(state, { partition })));
         }
 
         // Scan from next index
@@ -65,4 +65,4 @@ function InstanceResource(client) {
   }
 }
 
-module.exports = partition => createEC2Client(partition).then(client => new InstanceResource(client));
+module.exports = partition => createEC2Client(partition).then(client => new InstanceResource(partition, client));

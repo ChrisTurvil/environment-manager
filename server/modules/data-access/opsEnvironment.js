@@ -6,9 +6,9 @@ const LOGICAL_TABLE_NAME = 'InfraOpsEnvironment';
 const TTL = 1200; // seconds
 
 let physicalTableName = require('modules/awsResourceNameProvider').getTableName;
-let cachedSingleAccountDynamoTable = require('modules/data-access/cachedSingleAccountDynamoTable');
+let cachedSingleDynamoTable = require('modules/data-access/cachedSingleDynamoTable');
 
-let table = cachedSingleAccountDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });
+let table = cachedSingleDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });
 
 function setSchedule({ key, metadata, schedule }, expectedVersion) {
   let scheduleAttributes = Object.keys(schedule).map(prop => ['set', ['at', 'Value', prop], ['val', schedule[prop]]]);

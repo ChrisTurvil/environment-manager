@@ -10,14 +10,14 @@ let {
 let pages = require('modules/amazon-client/pages');
 let { compile } = require('modules/awsDynamo/dynamodbExpression');
 let { updateAuditMetadata } = require('modules/data-access/dynamoAudit');
-let { createDynamoClient: documentClient } = require('modules/amazon-client/masterAccountClient');
+let { DocumentClient: documentClient } = require('modules/amazon-client/masterAccountClient');
 let dynamoTable = require('modules/data-access/dynamoTable');
-let singleAccountDynamoTable = require('modules/data-access/singleAccountDynamoTable');
+let singleDynamoTable = require('modules/data-access/singleDynamoTable');
 let { setVersionOnUpdate } = require('modules/data-access/dynamoVersion');
 
 const TABLE_NAME = physicalTableName(LOGICAL_TABLE_NAME);
 
-let table = singleAccountDynamoTable(TABLE_NAME, dynamoTable);
+let table = singleDynamoTable(TABLE_NAME, dynamoTable);
 
 function inEnvironment(environment, { ExclusiveStartKey, Limit, ScanIndexForward } = {}) {
   return documentClient()

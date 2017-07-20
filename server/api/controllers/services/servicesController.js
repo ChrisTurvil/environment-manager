@@ -9,8 +9,8 @@ let toggleSlices = require('commands/slices/ToggleSlicesByService');
 let serviceHealth = require('modules/environment-state/getServiceHealth');
 let overallServiceHealth = require('modules/environment-state/getOverallServiceHealth');
 let metadata = require('commands/utils/metadata');
-let Environment = require('models/Environment');
 let sns = require('modules/sns/EnvironmentManagerEvents');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
 
 function isEmptyResponse(data) {
   return Array.isArray(data) && data.length === 0;
@@ -41,12 +41,12 @@ function getASGsByService(req, res, next) {
     let service = serviceName + slice;
 
     let nodes = _.castArray(yield serviceDiscovery.getService(environment, service));
-    let accountName = yield Environment.getAccountNameForEnvironment(environment);
+    let partition = yield getPartitionsForEnvironment(environment);
 
     let asgs = yield nodes.map((node) => {
       return co(function* () {
         let filter = {}; filter['tag:Name'] = node.Node;
-        let instance = _.first(yield ScanInstances({ accountName, filter }));
+        let instance = _.first(yield ScanInstances({ partition, filter }));
         return instance ? instance.getTag('aws:autoscaling:groupName') : null;
       });
     });

@@ -2,9 +2,11 @@
 
 'use strict';
 
-let scanAllPartitions = require('modules/queryHandlersUtil/scanAllPartitions');
+let mapAcrossPartitions = require('modules/queryHandlersUtil/mapAcrossPartitions');
 let ScanInstances = require('queryHandlers/ScanInstances');
+let { scanPartitions } = require('modules/amazon-client/awsConfiguration');
 
 module.exports = function (query) {
-  return scanAllPartitions(partition => ScanInstances(Object.assign({}, query, { partition })));
+  return scanPartitions()
+    .then(mapAcrossPartitions(partition => ScanInstances(Object.assign({}, query, { partition }))));
 };

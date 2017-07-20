@@ -6,6 +6,6 @@ const LOGICAL_TABLE_NAME = 'ConfigDeploymentMaps';
 const TTL = 600; // seconds
 
 let physicalTableName = require('modules/awsResourceNameProvider').getTableName;
-let cachedSingleAccountDynamoTable = require('modules/data-access/cachedSingleAccountDynamoTable');
+let cachedSingleDynamoTable = require('modules/data-access/cachedSingleDynamoTable');
 
-module.exports = cachedSingleAccountDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });
+module.exports = cachedSingleDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });

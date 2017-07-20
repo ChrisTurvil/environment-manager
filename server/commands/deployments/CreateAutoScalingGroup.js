@@ -13,17 +13,17 @@ module.exports = function CreateAutoScalingGroupCommandHandler(command) {
 
   assert(command, 'Expected "command" argument not to be null.');
   assert(command.template, 'Expected "command" argument to contain "template" property not null.');
-  assert(command.accountName, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(command.partition, 'Expected "command" argument to contain "partition" property not null or empty.');
 
   return co(function* () {
     let template = command.template;
-    let accountName = command.accountName;
+    let partition = command.partition;
     let autoScalingGroupName = template.autoScalingGroupName;
 
     logger.info(`Creating [${autoScalingGroupName}] AutoScalingGroup...`);
 
     let autoScalingGroupClient = yield autoScalingGroupClientFactory.create({
-      accountName
+      partition
     });
 
     let request = getCreateAutoScalingGroupRequest(template);

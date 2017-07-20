@@ -14,11 +14,10 @@ let securityGroupsProvider = require('modules/provisioning/launchConfiguration/s
 
 let AutoScalingGroup = require('models/AutoScalingGroup');
 
-module.exports = function SetLaunchConfiguration(command) {
+module.exports = function SetLaunchConfiguration({ autoScalingGroupName, data, partition }) {
   return co(function* () {
-    let data = command.data;
     let updated = {};
-    let autoScalingGroup = yield AutoScalingGroup.getByName(command.accountName, command.autoScalingGroupName);
+    let autoScalingGroup = yield AutoScalingGroup.getByName(partition, autoScalingGroupName);
     let originalLaunchConfiguration = yield autoScalingGroup.getLaunchConfiguration();
 
     // Get the image and disk size specified
@@ -35,7 +34,7 @@ module.exports = function SetLaunchConfiguration(command) {
 
     if (data.InstanceProfileName !== undefined) {
       // That's checking if this instance profile name exists
-      yield getInstanceProfileByName(command.accountName, data.InstanceProfileName);
+      yield getInstanceProfileByName(partition, data.InstanceProfileName);
       updated.IamInstanceProfile = data.InstanceProfileName;
     }
 
@@ -52,7 +51,7 @@ module.exports = function SetLaunchConfiguration(command) {
         name,
         reason: 'It was set by user in LaunchConfig form'
       }));
-      let securityGroups = yield securityGroupsProvider.getFromSecurityGroupNames(command.accountName, vpcId, securityGroupsNamesAndReasons, logger);
+      let securityGroups = yield securityGroupsProvider.getFromSecurityGroupNames(partition, vpcId, securityGroupsNamesAndReasons, logger);
       updated.SecurityGroups = _.map(securityGroups, 'GroupId');
     }
 
@@ -64,13 +63,10 @@ module.exports = function SetLaunchConfiguration(command) {
       updated.UserData = new Buffer(data.UserData).toString('base64');
     }
 
-    let accountName = command.accountName;
-    let autoScalingGroupName = command.autoScalingGroupName;
-
     logger.debug(`Updating ASG ${autoScalingGroupName} with: ${JSON.stringify(updated)}`);
 
     return launchConfigUpdater.set(
-      accountName,
+      partition,
       autoScalingGroup,
       (launchConfiguration) => {
         _.assign(launchConfiguration, updated);
@@ -89,10 +85,10 @@ function getOSDiskSize(newVolumes, originalBlockDeviceMappings) {
   return originalOSBlockDeviceMapping.Ebs.VolumeSize;
 }
 
-function getInstanceProfileByName(accountName, instanceProfileName) {
+function getInstanceProfileByName(partition, instanceProfileName) {
   let query = {
     name: 'GetInstanceProfile',
-    accountName,
+    partition,
     instanceProfileName
   };
 

@@ -9,21 +9,16 @@ let {
   UpstreamProvider,
   UpstreamToggler
  } = require('../utils/toggleSlices');
-let sender = require('modules/sender');
-let Environment = require('models/Environment');
 
 module.exports = function ToggleSlicesByUpstream(command) {
   assert.equal(typeof command.environmentName, 'string');
   assert.equal(typeof command.upstreamName, 'string');
 
-  return Environment.getAccountNameForEnvironment(command.environmentName).then((account) => {
-    command.accountName = account;
-
+  return Promise.resolve().then(() => {
     let resourceName = `Upstream named "${command.upstreamName}" in "${command.environmentName}" environment`;
-    let provider = UpstreamProvider(sender, command, resourceName);
+    let provider = UpstreamProvider(command, resourceName);
     let verifier = ToggleUpstreamByNameVerifier(resourceName);
-    let toggler = UpstreamToggler(sender, command);
-
+    let toggler = UpstreamToggler(command);
     return orchestrate(provider, verifier, toggler);
   });
 };

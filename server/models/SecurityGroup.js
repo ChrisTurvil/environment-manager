@@ -3,7 +3,7 @@
 'use strict';
 
 let _ = require('lodash');
-let sender = require('modules/sender');
+let ScanSecurityGroups = require('queryHandlers/ScanSecurityGroups');
 let TaggableMixin = require('./TaggableMixin');
 
 class SecurityGroup {
@@ -15,26 +15,24 @@ class SecurityGroup {
     return this.getTag('Name');
   }
 
-  static getAllByIds(accountName, vpcId, groupIds) {
+  static getAllByIds(partition, vpcId, groupIds) {
     let query = {
       name: 'ScanSecurityGroups',
-      accountName,
+      partition,
       vpcId,
       groupIds
     };
-
-    return sender.sendQuery({ query }).then(list => list.map(item => new TaggableSecurityGroup(item)));
+    return ScanSecurityGroups(query).then(list => list.map(item => new TaggableSecurityGroup(item)));
   }
 
-  static getAllByNames(accountName, vpcId, groupNames) {
+  static getAllByNames(partition, vpcId, groupNames) {
     let query = {
       name: 'ScanSecurityGroups',
-      accountName,
+      partition,
       vpcId,
       groupNames
     };
-
-    return sender.sendQuery({ query }).then(list => list.map(item => new TaggableSecurityGroup(item)));
+    return ScanSecurityGroups(query).then(list => list.map(item => new TaggableSecurityGroup(item)));
   }
 }
 

@@ -4,8 +4,7 @@
 
 let _ = require('lodash');
 let co = require('co');
-let getAllASGs = require('queryHandlers/ScanAutoScalingGroupsInAllPartitions');
-let getAccountASGs = require('queryHandlers/ScanAutoScalingGroups');
+let getASGsInPartition = require('queryHandlers/ScanAutoScalingGroups');
 let getASG = require('queryHandlers/GetAutoScalingGroup');
 let AutoScalingGroup = require('models/AutoScalingGroup');
 let asgips = require('modules/data-access/asgips');
@@ -16,8 +15,11 @@ let SetAutoScalingGroupSchedule = require('commands/asg/SetAutoScalingGroupSched
 let UpdateAutoScalingGroup = require('commands/asg/UpdateAutoScalingGroup');
 let GetAutoScalingGroupScheduledActions = require('queryHandlers/GetAutoScalingGroupScheduledActions');
 let getASGReady = require('modules/environment-state/getASGReady');
-let Environment = require('models/Environment');
+let { getPartitionsForEnvironment, scanPartitions } = require('modules/amazon-client/awsConfiguration');
 let sns = require('modules/sns/EnvironmentManagerEvents');
+let mapAcrossPartitions = require('modules/queryHandlersUtil/mapAcrossPartitions');
+let Environment = require('models/Environment');
+let getPartitionsInAccount = require('modules/amazon-client/getPartitionsInAccount');
 
 /**
  * GET /asgs
@@ -29,19 +31,13 @@ function getAsgs(req, res, next) {
   return co(function* () {
     let list;
     if (environment !== undefined) {
-      let account = yield Environment.getAccountNameForEnvironment(environment);
-      let t = yield getAccountASGs({
-        accountName: account
-      });
+      let partition = yield getPartitionsForEnvironment(environment);
+      let t = yield getASGsInPartition({ partition });
       list = t.filter(asg => asg.getTag('Environment') === environment);
-    } else if (accountName !== undefined) {
-      list = yield getAccountASGs({
-        accountName
-      });
     } else {
-      list = yield getAllASGs();
+      let partitionsP = accountName !== undefined ? getPartitionsInAccount(accountName) : scanPartitions();
+      list = yield partitionsP.then(mapAcrossPartitions(partition => getASGsInPartition({ partition })));
     }
-
     res.json(list);
   }).catch(next);
 }
@@ -54,8 +50,8 @@ function getAsgByName(req, res, next) {
   const environmentName = req.swagger.params.environment.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    return getASG({ accountName, autoScalingGroupName }).then(data => res.json(data));
+    let partition = yield getPartitionsForEnvironment(environmentName);
+    return getASG({ partition, autoScalingGroupName }).then(data => res.json(data));
   }).catch(next);
 }
 
@@ -95,8 +91,8 @@ function getAsgLaunchConfig(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    GetLaunchConfiguration({ accountName, autoScalingGroupName }).then(data => res.json(data));
+    let partition = yield getPartitionsForEnvironment(environmentName);
+    GetLaunchConfiguration({ partition, autoScalingGroupName }).then(data => res.json(data));
   }).catch(next);
 }
 
@@ -108,8 +104,8 @@ function getScalingSchedule(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    GetAutoScalingGroupScheduledActions({ accountName, autoScalingGroupName }).then(data => res.json(data));
+    let partition = yield getPartitionsForEnvironment(environmentName);
+    GetAutoScalingGroupScheduledActions({ partition, autoScalingGroupName }).then(data => res.json(data));
   }).catch(next);
 }
 
@@ -153,8 +149,8 @@ function deleteAsg(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    AutoScalingGroup.getByName(accountName, autoScalingGroupName)
+    let partition = yield getPartitionsForEnvironment(environmentName);
+    AutoScalingGroup.getByName(partition, autoScalingGroupName)
       .then(asg => asg.deleteASG())
       .then((status) => {
         res.json({
@@ -189,12 +185,12 @@ function putScalingSchedule(req, res, next) {
   return co(function* () {
     let data = {};
 
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
+    let partition = yield getPartitionsForEnvironment(environmentName);
     let schedule = body.schedule;
     let propagateToInstances = body.propagateToInstances;
 
     data = yield SetAutoScalingGroupSchedule({
-      accountName,
+      partition,
       autoScalingGroupName,
       schedule,
       propagateToInstances
@@ -231,9 +227,9 @@ function putAsgSize(req, res, next) {
   const autoScalingGroupMaxSize = body.max;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
+    let partition = yield getPartitionsForEnvironment(environmentName);
     SetAutoScalingGroupSize({
-      accountName,
+      partition,
       autoScalingGroupName,
       autoScalingGroupMinSize,
       autoScalingGroupDesiredSize,
@@ -266,9 +262,9 @@ function putAsgLaunchConfig(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
+    let partition = yield getPartitionsForEnvironment(environmentName);
     SetLaunchConfiguration({
-      accountName,
+      partition,
       autoScalingGroupName,
       data
     })

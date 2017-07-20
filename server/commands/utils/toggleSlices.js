@@ -83,7 +83,7 @@ function ToggleUpstreamByNameVerifier(resourceName) {
   };
 }
 
-function UpstreamProvider(_, toggleCommand, resourceName) {
+function UpstreamProvider(toggleCommand, resourceName) {
   let { environmentName, serviceName, upstreamName } = toggleCommand;
 
   let errorIfNone = items => (items.length === 0
@@ -105,7 +105,7 @@ function UpstreamProvider(_, toggleCommand, resourceName) {
   };
 }
 
-function UpstreamToggler(senderInstance, toggleCommand) {
+function UpstreamToggler(toggleCommand) {
   let metadata = {
     TransactionID: toggleCommand.commandId,
     User: toggleCommand.username

@@ -2,12 +2,12 @@
 
 'use strict';
 
-let singleAccountDynamoTable = require('modules/data-access/singleAccountDynamoTable');
+let singleDynamoTable = require('modules/data-access/singleDynamoTable');
 let dynamoTableCache = require('modules/data-access/dynamoTableCache');
 
 function factory(physicalTableName, { ttl }) {
   let cachedTable = dynamoTableCache(physicalTableName, { ttl });
-  return singleAccountDynamoTable(physicalTableName, cachedTable);
+  return singleDynamoTable(physicalTableName, cachedTable);
 }
 
 module.exports = factory;

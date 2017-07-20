@@ -5,7 +5,6 @@
 let co = require('co');
 let Enums = require('Enums');
 let DeploymentContract = require('modules/deployment/DeploymentContract');
-let sender = require('modules/sender');
 let infrastructureConfigurationProvider = require('modules/provisioning/infrastructureConfigurationProvider');
 let logger = require('modules/logger');
 let namingConventionProvider = require('modules/provisioning/namingConventionProvider');
@@ -15,10 +14,15 @@ let _ = require('lodash');
 let SupportedSliceNames = _.values(Enums.SliceName);
 let SupportedDeploymentModes = _.values(Enums.DeploymentMode);
 let s3PackageLocator = require('modules/s3PackageLocator');
-let EnvironmentHelper = require('models/Environment');
 let OpsEnvironment = require('models/OpsEnvironment');
 let ResourceLockedError = require('modules/errors/ResourceLockedError');
 let GetServicePortConfig = require('queryHandlers/GetServicePortConfig');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
+let { account } = require('modules/amazon-client/partition');
+let GetInfrastructureRequirements = require('commands/deployments/GetInfrastructureRequirements');
+let ProvideInfrastructure = require('commands/deployments/ProvideInfrastructure');
+let PushDeployment = require('commands/deployments/PushDeployment');
+let PreparePackage = require('commands/deployments/PreparePackage');
 
 module.exports = function DeployServiceCommandHandler(command) {
   return co(function* () {
@@ -36,8 +40,7 @@ module.exports = function DeployServiceCommandHandler(command) {
     // Run asynchronously, we don't wait for deploy to finish intentionally
     deploy(deployment, destination, sourcePackage, command);
 
-    let accountName = deployment.accountName;
-    yield deploymentLogger.started(deployment, accountName);
+    yield deploymentLogger.started(deployment);
     return deployment;
   });
 };
@@ -75,10 +78,10 @@ function validateCommandAndCreateDeployment(command) {
       }
     }
 
-    const environment = yield EnvironmentHelper.getByName(command.environmentName);
     const opsEnvironment = yield OpsEnvironment.getByName(command.environmentName);
-    const environmentType = yield environment.getEnvironmentType();
-    command.accountName = environmentType.AWSAccountName;
+    let partition = yield getPartitionsForEnvironment(environmentName);
+    command.accountName = account(partition);
+    command.region = partition.region;
     const servicePortConfig = yield GetServicePortConfig(command.serviceName, command.serviceSlice);
 
     if (opsEnvironment.Value.DeploymentsLocked) {
@@ -95,6 +98,7 @@ function validateCommandAndCreateDeployment(command) {
       id: command.commandId,
       environmentTypeName: configuration.environmentTypeName,
       environmentName: command.environmentName,
+      region: command.region,
       serviceName: command.serviceName,
       serviceVersion: command.serviceVersion,
       serviceSlice: command.serviceSlice || '',
@@ -112,11 +116,11 @@ function validateCommandAndCreateDeployment(command) {
 
 function deploy(deployment, destination, sourcePackage, command) {
   return co(function* () {
-    const accountName = deployment.accountName;
-    const requiredInfra = yield getInfrastructureRequirements(accountName, deployment, command);
-    yield provideInfrastructure(accountName, requiredInfra, command);
-    yield preparePackage(accountName, destination, sourcePackage, command);
-    yield pushDeployment(accountName, requiredInfra, deployment, destination, command);
+    let partition = yield getPartitionsForEnvironment(deployment.environmentName);
+    const requiredInfra = yield getInfrastructureRequirements(partition, deployment);
+    yield provideInfrastructure(partition, requiredInfra, deployment.deploymentId);
+    yield preparePackage(account(partition), destination, sourcePackage, deployment.deploymentId);
+    yield pushDeployment(requiredInfra, deployment, destination);
 
     deploymentLogger.inProgress(
       deployment.id,
@@ -125,8 +129,7 @@ function deploy(deployment, destination, sourcePackage, command) {
   }).catch((error) => {
     let deploymentStatus = {
       deploymentId: deployment.id,
-      environmentName: deployment.environmentName,
-      accountName: deployment.accountName
+      environmentName: deployment.environmentName
     };
 
     let newStatus = {
@@ -145,48 +148,38 @@ function sanitiseError(error) {
   return _.toString(error);
 }
 
-function getInfrastructureRequirements(accountName, deployment, parentCommand) {
-  let command = {
-    name: 'GetInfrastructureRequirements',
-    accountName,
-    deployment
-  };
-
-  return sender.sendCommand({ command, parent: parentCommand });
+function getInfrastructureRequirements(partition, deployment) {
+  return GetInfrastructureRequirements({ deployment, partition });
 }
 
-function provideInfrastructure(accountName, requiredInfra, parentCommand) {
+function provideInfrastructure(partition, requiredInfra, deploymentId) {
   let command = {
-    name: 'ProvideInfrastructure',
-    accountName,
     asgsToCreate: requiredInfra.asgsToCreate,
-    launchConfigsToCreate: requiredInfra.launchConfigsToCreate
+    deploymentId,
+    launchConfigsToCreate: requiredInfra.launchConfigsToCreate,
+    partition
   };
-
-  return sender.sendCommand({ command, parent: parentCommand });
+  return ProvideInfrastructure(command);
 }
 
-function preparePackage(accountName, destination, source, parentCommand) {
+function preparePackage(accountName, destination, source, deploymentId) {
   let command = {
+    deploymentId,
     name: 'PreparePackage',
     accountName,
     destination,
     source
   };
-
-  return sender.sendCommand({ command, parent: parentCommand });
+  return PreparePackage(command);
 }
 
-function pushDeployment(accountName, requiredInfra, deployment, s3Path, parentCommand) {
+function pushDeployment(requiredInfra, deployment, s3Path) {
   let command = {
-    name: 'PushDeployment',
-    accountName,
     deployment,
     s3Path,
     expectedNodeDeployments: requiredInfra.expectedInstances
   };
-
-  return sender.sendCommand({ command, parent: parentCommand });
+  return PushDeployment(command);
 }
 
 function getSourcePackageByCommand(command) {

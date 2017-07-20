@@ -6,9 +6,9 @@ const LOGICAL_TABLE_NAME = 'ConfigServices';
 const TTL = 600; // seconds
 
 let physicalTableName = require('modules/awsResourceNameProvider').getTableName;
-let cachedSingleAccountDynamoTable = require('modules/data-access/cachedSingleAccountDynamoTable');
+let cachedSingleDynamoTable = require('modules/data-access/cachedSingleDynamoTable');
 
-let table = cachedSingleAccountDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });
+let table = cachedSingleDynamoTable(physicalTableName(LOGICAL_TABLE_NAME), { ttl: TTL });
 
 function named(serviceName) {
   return table.query({

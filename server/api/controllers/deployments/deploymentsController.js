@@ -93,7 +93,7 @@ function postDeployment(req, res, next) {
       res.json(deployment);
     } else {
       res.status(202);
-      res.location(`/api/${deployment.accountName}/deployments/history/${deployment.id}`);
+      res.location(`/api/v1/deployments/${deployment.id}`);
       res.json(deployment);
     }
   })

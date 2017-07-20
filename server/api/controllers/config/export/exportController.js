@@ -4,7 +4,7 @@
 
 let { getTableName: physicalTableName } = require('modules/awsResourceNameProvider');
 let dynamoTable = require('modules/data-access/dynamoTable');
-let singleAccountDynamoTable = require('modules/data-access/singleAccountDynamoTable');
+let singleDynamoTable = require('modules/data-access/singleDynamoTable');
 let logicalTableName = require('api/api-utils/logicalTableName');
 
 /**
@@ -13,7 +13,7 @@ let logicalTableName = require('api/api-utils/logicalTableName');
 function getResourceExport(req, res, next) {
   const resourceParam = req.swagger.params.resource.value;
   return Promise.resolve()
-    .then(() => singleAccountDynamoTable(physicalTableName(logicalTableName(resourceParam)), dynamoTable))
+    .then(() => singleDynamoTable(physicalTableName(logicalTableName(resourceParam)), dynamoTable))
     .then(table => table.scan())
     .then(data => res.json(data))
     .catch(next);

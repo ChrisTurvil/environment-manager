@@ -4,11 +4,11 @@
 
 let _ = require('lodash');
 let co = require('co');
+let ScanInstances = require('queryHandlers/ScanInstances');
 let ScanInstancesInAllPartitions = require('queryHandlers/ScanInstancesInAllPartitions');
 let ec2InstanceClientFactory = require('modules/clientFactories/ec2InstanceClientFactory');
-let Environment = require('models/Environment');
+let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
 let moment = require('moment');
-let sender = require('modules/sender');
 let logger = require('modules/logger');
 let TaggableMixin = require('./TaggableMixin');
 
@@ -23,7 +23,7 @@ class Instance {
   }
 
   persistTag(tag) {
-    return ec2InstanceClientFactory.create({ accountName: this.AccountName }).then((client) => {
+    return ec2InstanceClientFactory.create({ partition: this.partition }).then((client) => {
       let parameters = {
         instanceIds: [this.InstanceId],
         tagKey: tag.key,
@@ -45,23 +45,18 @@ class Instance {
 
   static getAllByEnvironment(environmentName) {
     return co(function* () {
-      let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
+      let partition = yield getPartitionsForEnvironment(environmentName);
       let startTime = moment.utc();
 
       let filter = {};
       filter['tag:Environment'] = environmentName;
 
-      return sender.sendQuery({
-        query: {
-          name: 'ScanInstances',
-          accountName,
-          filter
-        }
-      }).then((result) => {
-        let duration = moment.duration(moment.utc().diff(startTime)).asMilliseconds();
-        logger.debug(`server-status-query: InstancesQuery took ${duration}ms`);
-        return result;
-      });
+      return ScanInstances({ filter, partition })
+        .then((result) => {
+          let duration = moment.duration(moment.utc().diff(startTime)).asMilliseconds();
+          logger.debug(`server-status-query: InstancesQuery took ${duration}ms`);
+          return result;
+        });
     });
   }
 }

@@ -12,13 +12,11 @@ let namingConvention = require('modules/provisioning/namingConventionProvider');
 let sender = require('modules/sender');
 let getASG = require('queryHandlers/GetAutoScalingGroup');
 let _ = require('lodash');
-let { getPartitionsForEnvironment } = require('modules/amazon-client/awsConfiguration');
 
-module.exports = function GetInfrastructureRequirements(command) {
-  let logger = new DeploymentCommandHandlerLogger(command);
+module.exports = function GetInfrastructureRequirements({ deployment, partition }) {
+  let logger = new DeploymentCommandHandlerLogger(deployment);
 
   return co(function* () {
-    let deployment = command.deployment;
     let environmentName = deployment.environmentName;
     let serviceName = deployment.serviceName;
     let slice = deployment.serviceSlice;
@@ -26,13 +24,12 @@ module.exports = function GetInfrastructureRequirements(command) {
 
     logger.info('Reading infrastructure configuration...');
 
-    let partitions = yield getPartitionsForEnvironment(environmentName);
     let configuration = yield configProvider.get(environmentName, serviceName, deployment.serverRoleName);
-    let asgsToCreate = yield getASGsToCreate(logger, configuration, partitions, slice);
-    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(partitions, configuration, asgsToCreate, slice);
+    let asgsToCreate = yield getASGsToCreate(logger, configuration, partition, slice);
+    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(partition, configuration, asgsToCreate, slice);
 
     if (!asgsToCreate.length) return requiredInfra;
-    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, partitions);
+    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, partition);
 
     // Check launchConfigs are valid
     launchConfigsToCreate.forEach((template) => {
