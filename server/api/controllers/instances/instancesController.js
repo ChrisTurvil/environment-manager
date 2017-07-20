@@ -193,7 +193,7 @@ function putInstanceMaintenance(req, res, next) {
     /**
      * Now switch Maintenance mode (previously done in separate end point)
      */
-    serviceTargets.setInstanceMaintenanceMode(accountName, instance.PrivateIpAddress, environmentName, enable);
+    serviceTargets.setInstanceMaintenanceMode(instance.PrivateIpAddress, environmentName, enable);
 
     res.send({ ok: true });
   })

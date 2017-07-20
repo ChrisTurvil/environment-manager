@@ -5,10 +5,9 @@
 let serviceTargets = require('modules/service-targets');
 
 module.exports = function SetTargetMaintenanceState(command) {
-  let accountName = command.accountName;
   let environment = command.instance.getTag('Environment');
   let host = command.instance.PrivateIpAddress;
   let enable = command.enable;
 
-  return serviceTargets.setInstanceMaintenanceMode(accountName, host, environment, enable);
+  return serviceTargets.setInstanceMaintenanceMode(host, environment, enable);
 };
