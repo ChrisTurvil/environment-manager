@@ -10,6 +10,24 @@ let accounts = require('modules/data-access/accounts');
 let environments = require('modules/data-access/configEnvironments');
 let environmentTypes = require('modules/data-access/configEnvironmentTypes');
 
+function getAccountForEnvironmentType(environmentType) {
+  return accounts.get({ AccountNumber: parseInt(environmentType.Value.AWSAccountNumber, 10) });
+}
+
+function partitionOf(account, environmentType) {
+  if (account !== null && environmentType !== null) {
+    let { RoleArn: roleArn } = account;
+    let { Value: { Region: region } = {} } = environmentType;
+    return Object.assign(...[
+      {},
+      region !== undefined && region !== null ? { region } : {},
+      roleArn !== undefined && roleArn !== null ? { roleArn } : {}
+    ]);
+  } else {
+    return null;
+  }
+}
+
 function getPartitionsForEnvironment(environmentName) {
   return environments.get({ EnvironmentName: environmentName })
     .then(environment => (environment !== null
@@ -23,25 +41,26 @@ function getPartitionsForEnvironmentType(environmentTypeName) {
   }
   let environmentTypeP = environmentTypes.get({ EnvironmentType: environmentTypeName });
   let accountP = environmentTypeP.then(environmentType => (environmentType !== null
-    ? accounts.get({ AccountNumber: parseInt(environmentType.Value.AWSAccountNumber, 10) })
+    ? getAccountForEnvironmentType(environmentType)
     : null));
-  return Promise.join(accountP, environmentTypeP,
-    (account, environmentType) => {
-      if (account !== null && environmentType !== null) {
-        let { RoleArn: roleArn } = account;
-        let { Value: { Region: region } = {} } = environmentType;
-        return Object.assign(...[
-          {},
-          region !== undefined && region !== null ? { region } : {},
-          roleArn !== undefined && roleArn !== null ? { roleArn } : {}
-        ]);
-      } else {
-        return null;
-      }
-    });
+  return Promise.join(accountP, environmentTypeP, partitionOf);
+}
+
+function distinct(array) {
+  return Array.from(array.reduce((acc, val) => { acc.set(JSON.stringify(val), val); return acc; }, new Map()).values());
+}
+
+function scanPartitions() {
+  let environmentTypesP = environmentTypes.scan();
+  return Promise.map(environmentTypesP,
+    environmentType => getAccountForEnvironmentType(environmentType)
+      .then(account => partitionOf(account, environmentType)))
+    .then(partitions => partitions.filter(({ region, roleArn }) => region !== undefined && roleArn !== undefined))
+    .then(distinct);
 }
 
 module.exports = {
   getPartitionsForEnvironment,
-  getPartitionsForEnvironmentType
+  getPartitionsForEnvironmentType,
+  scanPartitions
 };
