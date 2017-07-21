@@ -248,7 +248,7 @@ describe('healthReporter', function () {
   });
   describe('instancesRequestFor', function () {
     context('when given some health check results', function () {
-      it('returns a unique set of instances per AWS account', function () {
+      it('returns a unique set of instances per AWS account + region combination', function () {
         let health = [
           {
             Node: {
@@ -291,13 +291,17 @@ describe('healthReporter', function () {
             }
           }
         ];
-        let accountOf = (() => {
-          let environments = { env1a: 'account1', env1b: 'account1', env2: 'account2' };
+        let accountAndRegionOf = (() => {
+          let environments = {
+            env1a: 'region1:account1',
+            env1b: 'region2:account1',
+            env2: 'region1:account2' };
           return environment => Promise.resolve(environments[environment]);
         })();
-        sut.instancesRequestFor(accountOf, health).should.finally.eql({
-          'account1': ['node1'],
-          'account2': ['node1', 'node2']
+        sut.instancesRequestFor(accountAndRegionOf, health).should.finally.eql({
+          'region1:account1': ['node1'],
+          'region2:account1': ['node1'],
+          'region1:account2': ['node1', 'node2']
         });
       });
     });

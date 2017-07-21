@@ -59,13 +59,13 @@ function instancesOf(describeInstancesResult) {
   )(describeInstancesResult);
 }
 
-function instancesRequestFor(getAwsAccountForEnvironment, serviceHealthResults) {
+function instancesRequestFor(getAwsAccountAndRegionForEnvironment, serviceHealthResults) {
   let environmentOf = valueOfTag('environment');
   let getEnvironments = flow(
     flatMap(({ Service, Node: { Node } }) => environmentOf(Service)),
     uniq);
 
-  let getEnvAccountMapper = environments => Promise.map(environments, e => getAwsAccountForEnvironment(e).then(a => [e, a]))
+  let getEnvAccountMapper = environments => Promise.map(environments, e => getAwsAccountAndRegionForEnvironment(e).then(a => [e, a]))
     .then(flow(fromPairs, envAccountMap => env => envAccountMap[env]));
 
   let groupByAccount = (accountFor, health) => flow(

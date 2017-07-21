@@ -6,7 +6,7 @@
 'use strict';
 
 let Promise = require('bluebird');
-let accounts = require('modules/data-access/accounts');
+let { getByName: getAccountByName } = require('modules/awsAccounts');
 let environments = require('modules/data-access/configEnvironments');
 let environmentTypes = require('modules/data-access/configEnvironmentTypes');
 
@@ -15,7 +15,7 @@ function distinct(array) {
 }
 
 function getAccountForEnvironmentType(environmentType) {
-  return accounts.get({ AccountNumber: parseInt(environmentType.Value.AWSAccountNumber, 10) });
+  return getAccountByName(environmentType.Value.AWSAccountNumber);
 }
 
 function partitionOf(account, environmentType) {
@@ -24,7 +24,7 @@ function partitionOf(account, environmentType) {
     let { Value: { Region: region } = {} } = environmentType;
     return Object.assign(...[
       {},
-      accountId !== undefined && accountId !== null ? { accountId } : {},
+      accountId !== undefined && accountId !== null ? { accountId: `${accountId}` } : {},
       region !== undefined && region !== null ? { region } : {},
       roleArn !== undefined && roleArn !== null ? { roleArn } : {}
     ]);

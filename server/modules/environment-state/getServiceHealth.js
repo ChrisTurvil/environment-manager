@@ -30,7 +30,12 @@ let {
   instancesOf,
   instancesRequestFor,
   summariseComparison } = require('modules/environment-state/healthReporter');
-let { getAccountNameForEnvironment } = require('models/Environment');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
+
+function getAccountNameAndRegionForEnvironment(environment) {
+  return getPartitionForEnvironment(environment)
+    .then(({ accountId, region }) => JSON.stringify({ accountId, region }));
+}
 
 function getAutoScalingGroups(environmentQualifiedRoleNames) {
   return Promise.map(environmentQualifiedRoleNames,
@@ -55,9 +60,10 @@ function getInstances(instanceRequests) {
       }
     ]
   });
-  return Promise.map(toPairs(instanceRequests), ([account, instances]) => {
+  return Promise.map(toPairs(instanceRequests), ([accountAndRegion, instances]) => {
     let filters = query(instances);
-    return createEC2Client(account)
+    let { accountId, region } = JSON.parse(accountAndRegion);
+    return createEC2Client(accountId, region)
       .then(ec2 => ec2.describeInstances(filters).promise());
   }).then(flatten);
 }
@@ -83,7 +89,7 @@ function getCurrentState(filters) {
   let fullyQualifiedServiceNames = fullyQualifiedServiceNamesFor(filters);
   let serviceHealthP = getHealth(fullyQualifiedServiceNames);
   let instancesP = serviceHealthP
-    .then(serviceHealth => instancesRequestFor(getAccountNameForEnvironment, serviceHealth))
+    .then(serviceHealth => instancesRequestFor(getAccountNameAndRegionForEnvironment, serviceHealth))
     .then(getInstances)
     .then(flatMap(instancesOf))
     .then(reduce(assign, {}));
