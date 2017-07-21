@@ -2,9 +2,23 @@
 
 'use strict';
 
-let guid = require('uuid/v1');
+let Promise = require('bluebird');
 let AWS = require('aws-sdk');
 let awsAccounts = require('modules/awsAccounts');
+let { getCredentialsForRole } = require('modules/amazon-client/awsCredentials');
+
+function createClientWithRole(ClientConstructor) {
+  return (accountName, region) => {
+    let regionP = Promise.resolve(region !== undefined ? { region } : {});
+    let credentialsP = awsAccounts.getByName(accountName)
+      .then(({ Impersonate, RoleArn }) => (Impersonate && RoleArn !== undefined
+        ? getCredentialsForRole(RoleArn).then(credentials => ({ credentials }))
+        : Promise.resolve({})));
+    return Promise.all([credentialsP, regionP])
+      .then(args => Object.assign(...[{}, ...args]))
+      .then(options => new ClientConstructor(options));
+  };
+}
 
 module.exports = {
   createLowLevelDynamoClient: createClientWithRole(AWS.DynamoDB),
@@ -13,35 +27,5 @@ module.exports = {
   createEC2Client: createClientWithRole(AWS.EC2),
   createIAMClient: createClientWithRole(AWS.IAM),
   createS3Client: createClientWithRole(AWS.S3),
-  createSNSClient: createClientWithRole(AWS.SNS),
-  assumeRole
+  createSNSClient: createClientWithRole(AWS.SNS)
 };
-
-function createClientWithRole(ClientType) {
-  return accountName =>
-    awsAccounts.getByName(accountName)
-      .then(({ Impersonate, RoleArn }) => (Impersonate && RoleArn !== undefined
-        ? getCredentials(RoleArn).then(credentials => ({ credentials }))
-        : Promise.resolve({})))
-      .then(options => new ClientType(options));
-}
-
-function getCredentials(roleARN) {
-  return assumeRole(roleARN).then(response =>
-    new AWS.Credentials(
-      response.Credentials.AccessKeyId,
-      response.Credentials.SecretAccessKey,
-      response.Credentials.SessionToken
-    )
-  );
-}
-
-function assumeRole(roleARN) {
-  let stsClient = new AWS.STS();
-  let stsParameters = {
-    RoleArn: roleARN,
-    RoleSessionName: guid()
-  };
-
-  return stsClient.assumeRole(stsParameters).promise();
-}
