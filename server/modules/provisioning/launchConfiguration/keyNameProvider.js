@@ -8,18 +8,17 @@ let sender = require('modules/sender');
 let ConfigurationError = require('modules/errors/ConfigurationError.class');
 
 module.exports = {
-  get(configuration, accountName) {
+  get(configuration) {
     assert(configuration, 'Expected "configuration" argument not to be null');
-    assert(accountName, 'Expected "accountName" argument not to be null');
-
     let customKeyName = configuration.serverRole.ClusterKeyName;
+    let { environmentName } = configuration;
     if (customKeyName) {
-      return getKeyPairByName(customKeyName, accountName)
+      return getKeyPairByName(customKeyName, environmentName)
         .then(
-          keyPair => Promise.resolve(keyPair.KeyName),
-          error => Promise.reject(new ConfigurationError(
-            `An error has occurred verifying "${customKeyName}" key pair specified in configuration.`,
-            error))
+        keyPair => Promise.resolve(keyPair.KeyName),
+        error => Promise.reject(new ConfigurationError(
+          `An error has occurred verifying "${customKeyName}" key pair specified in configuration.`,
+          error))
         );
     } else {
       let keyName = configuration.cluster.KeyPair;
@@ -28,22 +27,22 @@ module.exports = {
           new ConfigurationError('Server role EC2 key pair set to cluster EC2 key pair, but this is empty. Please fix your configuration'));
       }
 
-      return getKeyPairByName(keyName, accountName)
+      return getKeyPairByName(keyName, environmentName)
         .then(
-          keyPair => Promise.resolve(keyPair.KeyName),
-          error => Promise.reject(new ConfigurationError(
-            `An error has occurred verifying "${keyName}" key pair defined by convention. ` +
-            'If needed a different one can be specified in configuration.',
-            error))
+        keyPair => Promise.resolve(keyPair.KeyName),
+        error => Promise.reject(new ConfigurationError(
+          `An error has occurred verifying "${keyName}" key pair defined by convention. ` +
+          'If needed a different one can be specified in configuration.',
+          error))
         );
     }
   }
 };
 
-function getKeyPairByName(keyName, accountName) {
+function getKeyPairByName(keyName, environmentName) {
   let query = {
     name: 'GetKeyPair',
-    accountName,
+    environmentName,
     keyName
   };
 

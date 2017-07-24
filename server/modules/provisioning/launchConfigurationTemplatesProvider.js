@@ -22,7 +22,7 @@ module.exports = {
       let sliceNames = configuration.serverRole.FleetPerSlice ? ['blue', 'green'] : [null];
 
       let image = yield imageProvider.get(configuration.serverRole.AMI);
-      let keyName = yield keyNameProvider.get(configuration, accountName);
+      let keyName = yield keyNameProvider.get(configuration);
       let iamInstanceProfile = yield iamInstanceProfileNameProvider.get(configuration, accountName);
       let securityGroups = yield securityGroupsProvider.getFromConfiguration(configuration, image, accountName, logger);
       let devices = instanceDevicesProvider.toAWS(configuration.serverRole.Volumes);

@@ -2,8 +2,8 @@
 
 'use strict';
 
-const amazonClientFactory = require('modules/amazon-client/childAccountClient');
-
+const { createEC2Client } = require('modules/amazon-client/childAccountClient');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 const AwsError = require('modules/errors/AwsError.class');
 const KeyPairNotFoundError = require('modules/errors/KeyPairNotFoundError.class');
 
@@ -31,6 +31,12 @@ class KeyPairResource {
   }
 }
 
+function create({ environmentName }) {
+  return getPartitionForEnvironment(environmentName)
+    .then(({ accountId, region }) => createEC2Client(accountId, region))
+    .then(client => new KeyPairResource(client));
+}
+
 module.exports = {
-  create: parameters => amazonClientFactory.createEC2Client(parameters.accountName).then(client => new KeyPairResource(client))
+  create
 };

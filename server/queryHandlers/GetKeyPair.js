@@ -5,11 +5,11 @@
 let assert = require('assert');
 let keypairFactory = require('modules/factories/keypairFactory');
 
-module.exports = function GetKeyPairQueryHandler({ accountName, keyName }) {
-  assert(accountName);
+module.exports = function GetKeyPairQueryHandler({ environmentName, keyName }) {
+  assert(environmentName);
   assert(keyName);
 
-  let parameters = { accountName };
+  let parameters = { environmentName };
   return keypairFactory.create(parameters)
     .then(resource => resource.get({ keyName }));
 };
