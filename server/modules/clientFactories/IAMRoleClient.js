@@ -5,12 +5,12 @@
 let co = require('co');
 let AwsError = require('modules/errors/AwsError.class');
 let RoleNotFoundError = require('modules/errors/RoleNotFoundError.class');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createIAMClient } = require('modules/amazon-client/childAccountClient');
 
 module.exports = function IAMRoleClient(accountName) {
   this.get = function (parameters) {
     return co(function* () {
-      let client = yield amazonClientFactory.createIAMClient(accountName);
+      let client = yield createIAMClient(accountName);
       let role = yield client.getRole({ RoleName: parameters.roleName }).promise().then(
 
         response => Promise.resolve(response.Role),
