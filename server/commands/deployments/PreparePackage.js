@@ -3,7 +3,7 @@
 'use strict';
 
 let ajv = require('ajv');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createS3Client } = require('modules/amazon-client/childAccountClient');
 let DeploymentCommandHandlerLogger = require('commands/deployments/DeploymentCommandHandlerLogger');
 let packageMover = require('commands/deployments/packageMover');
 
@@ -33,6 +33,6 @@ let preparePackage = function (mover, command) {
   let source = command.source;
   let accountName = command.accountName;
 
-  return amazonClientFactory.createS3Client(accountName)
+  return createS3Client(accountName)
     .then(s3 => mover.copyPackage(source.url, destination, s3));
 };
