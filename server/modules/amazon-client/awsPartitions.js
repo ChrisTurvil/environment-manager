@@ -51,17 +51,22 @@ function getPartitionForEnvironmentType(environmentTypeName) {
   return Promise.join(accountP, environmentTypeP, partitionOf);
 }
 
+function getPartitionsInAccount(accountId) {
+  return scanPartitions()
+    .then(ps => ps.filter(p => p.accountId === accountId));
+}
+
 function scanPartitions() {
   let environmentTypesP = environmentTypes.scan();
   return Promise.map(environmentTypesP,
     environmentType => getAccountForEnvironmentType(environmentType)
       .then(account => partitionOf(account, environmentType)))
-    .then(partitions => partitions.filter(({ region, roleArn }) => region !== undefined && roleArn !== undefined))
     .then(distinct);
 }
 
 module.exports = {
   getPartitionForEnvironment,
   getPartitionForEnvironmentType,
+  getPartitionsInAccount,
   scanPartitions
 };

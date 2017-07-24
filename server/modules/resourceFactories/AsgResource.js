@@ -3,7 +3,8 @@
 'use strict';
 
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { getPartitionsInAccount } = require('modules/amazon-client/awsPartitions');
+let { createASGClient } = require('modules/amazon-client/childAccountClient');
 let AwsError = require('modules/errors/AwsError.class');
 let AutoScalingGroupNotFoundError = require('modules/errors/AutoScalingGroupNotFoundError.class');
 let AutoScalingGroupAlreadyExistsError = require('modules/errors/AutoScalingGroupAlreadyExistsError.class');
@@ -15,15 +16,17 @@ let pages = require('modules/amazon-client/pages');
 function getAllAsgsInAccount(accountId, names) {
   logger.debug(`Describing all ASGs in account "${accountId}"...`);
   let request = (names && names.length) ? { AutoScalingGroupNames: names } : {};
-  let asgDescriptions = amazonClientFactory.createASGClient(accountId)
-    .then(client => pages.flatten(page => page.AutoScalingGroups, client.describeAutoScalingGroups(request)));
+  let asgDescriptions = getPartitionsInAccount(accountId)
+    .then(ps => Promise.map(ps, ({ region }) => createASGClient(accountId, region)
+      .then(client => pages.flatten(page => page.AutoScalingGroups, client.describeAutoScalingGroups(request)))))
+    .then(fp.flatten);
   return asgDescriptions;
 }
 
 let asgCache = cacheManager.create('Auto Scaling Groups', getAllAsgsInAccount, { stdTTL: 60 });
 
 function AsgResource(accountId) {
-  let asgClient = () => amazonClientFactory.createASGClient(accountId);
+  let asgClient = () => createASGClient(accountId);
 
   function standardifyError(error, autoScalingGroupName) {
     if (!error) return null;
