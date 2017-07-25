@@ -7,18 +7,21 @@ let co = require('co');
 let sender = require('modules/sender');
 let logger = require('modules/logger');
 let _ = require('lodash');
-
 let imageProvider = require('modules/provisioning/launchConfiguration/imageProvider');
 let instanceDevicesProvider = require('modules/provisioning/launchConfiguration/instanceDevicesProvider');
 let securityGroupsProvider = require('modules/provisioning/launchConfiguration/securityGroupsProvider');
+let AsgResource = require('modules/resourceFactories/AsgResource');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 
-let AutoScalingGroup = require('models/AutoScalingGroup');
-
-module.exports = function SetLaunchConfiguration(command) {
+module.exports = function SetLaunchConfiguration({
+  autoScalingGroupName,
+  data,
+  environmentName
+}) {
   return co(function* () {
-    let data = command.data;
     let updated = {};
-    let autoScalingGroup = yield AutoScalingGroup.getByName(command.accountName, command.autoScalingGroupName);
+    let { accountId, region } = getPartitionForEnvironment(environmentName);
+    let autoScalingGroup = yield AsgResource.get({ environmentName, name: autoScalingGroupName });
     let originalLaunchConfiguration = yield autoScalingGroup.getLaunchConfiguration();
 
     // Get the image and disk size specified
@@ -35,7 +38,7 @@ module.exports = function SetLaunchConfiguration(command) {
 
     if (data.InstanceProfileName !== undefined) {
       // That's checking if this instance profile name exists
-      yield getInstanceProfileByName(command.accountName, data.InstanceProfileName);
+      yield getInstanceProfileByName(accountId, data.InstanceProfileName);
       updated.IamInstanceProfile = data.InstanceProfileName;
     }
 
@@ -52,7 +55,7 @@ module.exports = function SetLaunchConfiguration(command) {
         name,
         reason: 'It was set by user in LaunchConfig form'
       }));
-      let securityGroups = yield securityGroupsProvider.getFromSecurityGroupNames(command.accountName, vpcId, securityGroupsNamesAndReasons, logger);
+      let securityGroups = yield securityGroupsProvider.getFromSecurityGroupNames(accountId, region, vpcId, securityGroupsNamesAndReasons, logger);
       updated.SecurityGroups = _.map(securityGroups, 'GroupId');
     }
 
@@ -64,13 +67,10 @@ module.exports = function SetLaunchConfiguration(command) {
       updated.UserData = new Buffer(data.UserData).toString('base64');
     }
 
-    let accountName = command.accountName;
-    let autoScalingGroupName = command.autoScalingGroupName;
-
     logger.debug(`Updating ASG ${autoScalingGroupName} with: ${JSON.stringify(updated)}`);
 
     return launchConfigUpdater.set(
-      accountName,
+      environmentName,
       autoScalingGroup,
       (launchConfiguration) => {
         _.assign(launchConfiguration, updated);

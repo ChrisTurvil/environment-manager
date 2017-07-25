@@ -3,21 +3,18 @@
 'use strict';
 
 let assert = require('assert');
-let co = require('co');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
+let AsgScheduledActionsResource = require('modules/resourceFactories/AsgScheduledActionsResource');
+let { createASGClient } = require('modules/amazon-client/childAccountClient');
 
-let resourceProvider = require('modules/resourceProvider');
+function GetAutoScalingGroupScheduledActions({ autoScalingGroupName, environmentName }) {
+  assert(environmentName);
+  assert(autoScalingGroupName);
 
-function* GetAutoScalingGroupScheduledActions(query) {
-  assert(query.accountName);
-  assert(query.autoScalingGroupName);
-
-  // Create an instance of the resource to work with based on the resource
-  // descriptor and AWS account name.
-  let parameters = { accountName: query.accountName };
-  let resource = yield resourceProvider.getInstanceByName('asgs-scheduled-actions', parameters);
-
-  // Get AutoScalingGroup's Scheduled Actions by name
-  return resource.get({ name: query.autoScalingGroupName });
+  return getPartitionForEnvironment(environmentName)
+    .then(({ accountId, region }) => createASGClient(accountId, region))
+    .then(client => new AsgScheduledActionsResource(client))
+    .then(resource => resource.get({ name: autoScalingGroupName }));
 }
 
-module.exports = co.wrap(GetAutoScalingGroupScheduledActions);
+module.exports = GetAutoScalingGroupScheduledActions;

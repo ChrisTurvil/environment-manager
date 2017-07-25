@@ -3,19 +3,17 @@
 'use strict';
 
 let co = require('co');
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let instanceDevicesProvider = require('modules/provisioning/launchConfiguration/instanceDevicesProvider');
 let Image = require('models/Image');
 let SecurityGroup = require('models/SecurityGroup');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 
 let _ = require('lodash');
 
-module.exports = function GetLaunchConfiguration(query) {
-  let accountName = query.accountName;
-  let autoScalingGroupName = query.autoScalingGroupName;
-
+module.exports = function GetLaunchConfiguration({ autoScalingGroupName, environmentName }) {
   return co(function* () {
-    let autoScalingGroup = yield AutoScalingGroup.getByName(accountName, autoScalingGroupName);
+    let autoScalingGroup = yield AsgResource.get({ environmentName, name: autoScalingGroupName });
     let awsLaunchConfig = yield autoScalingGroup.getLaunchConfiguration();
 
     let Volumes = instanceDevicesProvider.fromAWS(awsLaunchConfig.BlockDeviceMappings);
@@ -25,7 +23,8 @@ module.exports = function GetLaunchConfiguration(query) {
     let environmentType = yield autoScalingGroup.getEnvironmentType();
     let vpcId = environmentType.VpcId;
 
-    let securityGroups = yield SecurityGroup.getAllByIds(accountName, vpcId, awsLaunchConfig.SecurityGroups);
+    let { accountId, region } = yield getPartitionForEnvironment(environmentName);
+    let securityGroups = yield SecurityGroup.getAllByIds(accountId, region, vpcId, awsLaunchConfig.SecurityGroups);
     let securityGroupsNames = _.map(securityGroups, group => group.getTag('Name'));
 
     let ret = {

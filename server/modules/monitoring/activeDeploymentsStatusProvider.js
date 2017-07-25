@@ -18,6 +18,7 @@ let infrastructureConfigurationProvider = require('modules/provisioning/infrastr
 let namingConventionProvider = require('modules/provisioning/namingConventionProvider');
 let logger = require('modules/logger');
 let Environment = require('models/Environment');
+let { get: getASG } = require('modules/resourceFactories/AsgResource');
 
 module.exports = {
 
@@ -149,14 +150,8 @@ function getExpectedNodesIdByDeployment(deployment) {
       configuration, deployment.Value.ServiceSlice
     );
 
-    let query = {
-      name: 'GetAutoScalingGroup',
-      accountName: deployment.AccountName,
-      autoScalingGroupName
-    };
-
     try {
-      let autoScalingGroup = yield sender.sendQuery({ query });
+      let autoScalingGroup = yield getASG({ environmentName: deployment.Value.EnvironmentName, name: autoScalingGroupName });
       let nodeIds = autoScalingGroup.Instances
         .filter(instance => instance.LifecycleState === 'InService')
         .map(instance => instance.InstanceId);

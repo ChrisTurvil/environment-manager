@@ -3,60 +3,53 @@
 'use strict';
 
 let assert = require('assert');
-let resourceProvider = require('modules/resourceProvider');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let co = require('co');
-let sender = require('modules/sender');
+let SetAutoScalingGroupSize = require('commands/asg/SetAutoScalingGroupSize');
 let autoScalingGroupSizePredictor = require('modules/autoScalingGroupSizePredictor');
-let AutoScalingGroup = require('models/AutoScalingGroup');
 
-module.exports = function ExitAutoScalingGroupInstancesFromStandby(command) {
-  assert(command.accountName !== undefined && command.accountName !== null);
-  assert(command.autoScalingGroupName !== undefined && command.autoScalingGroupName !== null);
-  assert(command.instanceIds !== undefined && command.instanceIds !== null);
+module.exports = function ExitAutoScalingGroupInstancesFromStandby({ autoScalingGroupName, environmentName, instanceIds }) {
+  assert(environmentName !== undefined && environmentName !== null);
+  assert(autoScalingGroupName !== undefined && autoScalingGroupName !== null);
+  assert(instanceIds !== undefined && instanceIds !== null);
 
   return co(function* () {
-    let parameters;
-    let childCommand;
-
-    let autoScalingGroup = yield AutoScalingGroup.getByName(command.accountName, command.autoScalingGroupName);
+    let autoScalingGroup = yield AsgResource.get({ environmentName, name: autoScalingGroupName });
 
     // Predict AutoScalingGroup size after exiting instances from standby
-    let expectedSize = yield autoScalingGroupSizePredictor.predictSizeAfterExitingInstancesFromStandby(autoScalingGroup, command.instanceIds);
+    let expectedSize = yield autoScalingGroupSizePredictor.predictSizeAfterExitingInstancesFromStandby(autoScalingGroup, instanceIds);
 
     // Create a resource to work with AutoScalingGroups in the target AWS account.
-    parameters = { accountName: command.accountName };
-    let asgResource = yield resourceProvider.getInstanceByName('asgs', parameters);
 
     // Before exiting instances from Standby the AutoScalingGroup maximum size has to be
     // increased because the action of "exiting instances from standby" will automatically
     // increase the desired capacity and this cannot be greater than the maximum size.
-    childCommand = {
-      name: 'SetAutoScalingGroupSize',
-      accountName: command.accountName,
-      autoScalingGroupName: command.autoScalingGroupName,
+    let increaseMaxSize = {
+      environmentName,
+      autoScalingGroupName,
       autoScalingGroupMaxSize: expectedSize
     };
-    yield sender.sendCommand({ command: childCommand, parent: command });
+    yield SetAutoScalingGroupSize(increaseMaxSize);
 
     // Through the resource instance previously created the AutoScalingGroup instances
     // are exited from standby
-    parameters = {
-      name: command.autoScalingGroupName,
-      instanceIds: command.instanceIds
+    let parameters = {
+      environmentName,
+      name: autoScalingGroupName,
+      instanceIds
     };
-    yield asgResource.exitInstancesFromStandby(parameters);
+    yield AsgResource.exitInstancesFromStandby(parameters);
 
     // After exiting instances from Standby the AutoScalingGroup minimum size should be
     // increased as well as the maximum size. This because the AutoScalingGroup minimum,
     // maximum and desired size are equal by convention.
-    childCommand = {
-      name: 'SetAutoScalingGroupSize',
-      accountName: command.accountName,
-      autoScalingGroupName: command.autoScalingGroupName,
+    let increaseMinSize = {
+      environmentName,
+      autoScalingGroupName,
       autoScalingGroupMinSize: expectedSize
     };
-    yield sender.sendCommand({ command: childCommand, parent: command });
+    yield SetAutoScalingGroupSize(increaseMinSize);
 
-    return { InstancesExitedFromStandby: command.instanceIds };
+    return { InstancesExitedFromStandby: instanceIds };
   });
 };

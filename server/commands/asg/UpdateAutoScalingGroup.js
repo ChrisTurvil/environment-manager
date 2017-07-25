@@ -2,17 +2,25 @@
 
 'use strict';
 
+let assert = require('assert');
 let co = require('co');
 let _ = require('lodash');
-let resourceProvider = require('modules/resourceProvider');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let InvalidOperationError = require('modules/errors/InvalidOperationError.class');
 let subnetsProvider = require('modules/provisioning/autoScaling/subnetsProvider');
 let Environment = require('models/Environment');
 let EnvironmentType = require('models/EnvironmentType');
 
-function* handler(command) {
-  // Validation
-  let size = command.parameters.size;
+function* handler({
+  autoScalingGroupName,
+  environmentName,
+  parameters: {
+    network,
+    size
+  }
+}) {
+  assert(autoScalingGroupName !== undefined);
+  assert(environmentName !== undefined);
 
   if (!_.isNil(size.min)) {
     if (!_.isNil(size.max) && size.min > size.max) {
@@ -42,22 +50,11 @@ function* handler(command) {
     }
   }
 
-  // Get a resource instance to work with AutoScalingGroup in the proper
-  // AWS account.
-  let accountName = yield Environment.getAccountNameForEnvironment(command.environmentName);
-  let resource = yield resourceProvider.getInstanceByName('asgs', {
-    accountName
-  });
-
   let subnets;
-
-  let network = command.parameters.network;
   if (!_.isNil(network)) {
-    let environment = yield Environment.getByName(command.environmentName);
+    let environment = yield Environment.getByName(environmentName);
     let environmentType = yield EnvironmentType.getByName(environment.EnvironmentType);
-    let asg = yield resource.get({
-      name: command.autoScalingGroupName
-    });
+    let asg = yield AsgResource.get({ environmentName, name: autoScalingGroupName });
 
     let currentSubnet = asg.VPCZoneIdentifier.split(',')[0];
     let currentSubnetType = getSubnetTypeBySubnet(environmentType.Subnets, currentSubnet);
@@ -73,15 +70,16 @@ function* handler(command) {
     });
   }
 
-  let parameters = {
-    name: command.autoScalingGroupName,
+  let asgParameters = {
+    environmentName,
+    name: autoScalingGroupName,
     minSize: size.min,
     desiredSize: size.desired,
     maxSize: size.max,
     subnets
   };
 
-  return resource.put(parameters);
+  return AsgResource.put(asgParameters);
 }
 
 function getSubnetTypeBySubnet(subnetTypes, subnet) {

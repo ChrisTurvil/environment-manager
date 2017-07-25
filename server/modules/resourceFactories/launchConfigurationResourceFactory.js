@@ -4,7 +4,7 @@
 
 let _ = require('lodash');
 let amazonClientFactory = require('modules/amazon-client/childAccountClient');
-
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 let AwsError = require('modules/errors/AwsError.class');
 let LaunchConfigurationAlreadyExistsError = require('modules/errors/LaunchConfigurationAlreadyExistsError.class');
 
@@ -92,5 +92,11 @@ module.exports = {
     resourceDescriptor.type.toLowerCase() === 'launchconfig',
 
   create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.createASGClient(parameters.accountName).then(client => new LaunchConfigurationResource(client))
+    amazonClientFactory.createASGClient(parameters.accountName)
+      .then(client => new LaunchConfigurationResource(client)),
+
+  createLaunchConfigurationResource: ({ environmentName }) =>
+    getPartitionForEnvironment(environmentName)
+      .then(({ accountId, region }) => amazonClientFactory.createASGClient(accountId, region))
+      .then(client => new LaunchConfigurationResource(client))
 };

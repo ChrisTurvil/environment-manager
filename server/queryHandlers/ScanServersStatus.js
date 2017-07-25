@@ -7,7 +7,7 @@ let co = require('co');
 let moment = require('moment');
 let logger = require('modules/logger');
 let sender = require('modules/sender');
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let Instance = require('models/Instance');
 
 module.exports = co.wrap(ScanServersStatusQueryHandler);
@@ -18,7 +18,7 @@ function* ScanServersStatusQueryHandler(query) {
   let allStartTime = moment.utc();
 
   return Promise.all([
-    AutoScalingGroup.getAllByEnvironment(environmentName),
+    AsgResource.getAllByEnvironment({ environmentName }),
     Instance.getAllByEnvironment(environmentName),
     getAllImages()
   ]).then((results) => {

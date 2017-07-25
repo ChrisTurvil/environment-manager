@@ -3,9 +3,10 @@
 'use strict';
 
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let Instance = require('models/Instance');
 let InstanceNotFoundError = require('modules/errors/InstanceNotFoundError.class');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPArtitions');
 
 function InstanceResource(client) {
   function flatInstances(data) {
@@ -70,6 +71,11 @@ module.exports = {
     resourceDescriptor.type.toLowerCase() === 'ec2/instance',
 
   create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.createEC2Client(parameters.accountName).then(client => new InstanceResource(client))
+    createEC2Client(parameters.accountName).then(client => new InstanceResource(client)),
 
+  setTag: ({ environmentName, instanceIds, tagKey, tagValue }) =>
+    getPartitionForEnvironment(environmentName)
+      .then(({ accountId, region }) => createEC2Client(accountId, region))
+      .then(client => new InstanceResource(client))
+      .then(x => x.setTag({ instanceIds, tagKey, tagValue }))
 };

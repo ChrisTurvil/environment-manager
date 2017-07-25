@@ -17,7 +17,7 @@ let {
   toPairs
 } = require('lodash/fp');
 let GetServerRoles = require('queryHandlers/services/GetServerRoles');
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let serviceDiscovery = require('modules/service-discovery');
 let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let { fullyQualifiedServiceNamesFor } = require('modules/environment-state/serverRoleFilters');
@@ -39,7 +39,8 @@ function getAccountNameAndRegionForEnvironment(environment) {
 
 function getAutoScalingGroups(environmentQualifiedRoleNames) {
   return Promise.map(environmentQualifiedRoleNames,
-    ({ environment, role }) => AutoScalingGroup.getAllByServerRoleName(environment, role))
+    ({ environment: environmentName, role: serverRoleName }) =>
+      AsgResource.getAllByServerRoleName({ environmentName, serverRoleName }))
     .then(flatten);
 }
 

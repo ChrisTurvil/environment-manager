@@ -2,6 +2,7 @@
 
 'use strict';
 
+let assert = require('assert');
 let co = require('co');
 let DeploymentCommandHandlerLogger = require('commands/deployments/DeploymentCommandHandlerLogger');
 let DeploymentValidationError = require('modules/errors/DeploymentValidationError.class');
@@ -9,9 +10,11 @@ let launchConfigurationTemplatesProvider = require('modules/provisioning/launchC
 let configProvider = require('modules/provisioning/infrastructureConfigurationProvider');
 let asgTemplatesProvider = require('modules/provisioning/autoScalingTemplatesProvider');
 let namingConvention = require('modules/provisioning/namingConventionProvider');
-let sender = require('modules/sender');
-let getASG = require('queryHandlers/GetAutoScalingGroup');
+let { get: getASG } = require('modules/resourceFactories/AsgResource');
 let _ = require('lodash');
+let ScanAutoScalingGroups = require('queryHandlers/ScanAutoScalingGroups');
+let ScanLaunchConfigurations = require('queryHandlers/ScanLaunchConfigurations');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 
 module.exports = function GetInfrastructureRequirements(command) {
   let logger = new DeploymentCommandHandlerLogger(command);
@@ -20,18 +23,19 @@ module.exports = function GetInfrastructureRequirements(command) {
     let deployment = command.deployment;
     let environmentName = deployment.environmentName;
     let serviceName = deployment.serviceName;
-    let accountName = deployment.accountName;
     let slice = deployment.serviceSlice;
     let requiredInfra = { asgsToCreate: [], launchConfigsToCreate: [], expectedInstances: 0 };
 
-    logger.info('Reading infrastructure configuration...');
+    assert(environmentName !== undefined);
 
+    logger.info('Reading infrastructure configuration...');
+    let { accountId } = yield getPartitionForEnvironment(environmentName);
     let configuration = yield configProvider.get(environmentName, serviceName, deployment.serverRoleName);
-    let asgsToCreate = yield getASGsToCreate(logger, configuration, accountName, slice);
-    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(accountName, configuration, asgsToCreate, slice);
+    let asgsToCreate = yield getASGsToCreate(logger, configuration, accountId, slice);
+    requiredInfra.expectedInstances = yield getExpectedNumberOfInstances(environmentName, configuration, asgsToCreate, slice);
 
     if (!asgsToCreate.length) return requiredInfra;
-    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, accountName);
+    let launchConfigsToCreate = yield getLaunchConfigsToCreate(logger, configuration, asgsToCreate, accountId);
 
     // Check launchConfigs are valid
     launchConfigsToCreate.forEach((template) => {
@@ -52,7 +56,7 @@ module.exports = function GetInfrastructureRequirements(command) {
   });
 };
 
-function getExpectedNumberOfInstances(accountName, config, slice, asgsToCreate) {
+function getExpectedNumberOfInstances(environmentName, config, slice, asgsToCreate) {
   return co(function* () {
     if (asgsToCreate.length) {
       // ASG does not exist yet, get desired size from server role
@@ -60,41 +64,35 @@ function getExpectedNumberOfInstances(accountName, config, slice, asgsToCreate) 
     } else {
       // ASG exists, read current desired size
       let autoScalingGroupName = namingConvention.getAutoScalingGroupName(config, slice);
-      return getASG({ accountName, autoScalingGroupName }).then(data => data.DesiredCapacity);
+      return getASG({ environmentName, name: autoScalingGroupName }).then(data => data.DesiredCapacity);
     }
   });
 }
 
-function getASGsToCreate(logger, configuration, accountName, slice) {
+function getASGsToCreate(logger, configuration, accountId, slice) {
   return co(function* () {
-    let autoScalingTemplates = yield asgTemplatesProvider.get(configuration, accountName);
+    let autoScalingTemplates = yield asgTemplatesProvider.get(configuration, accountId);
     let autoScalingGroupNames = autoScalingTemplates
       .map(template => template.autoScalingGroupName)
       .filter((asgName) => {
         // Only create ASGs On Demand
         return slice === 'none' ||                                        // Always create ASG in overwrite mode
-            configuration.serverRole.FleetPerSlice === undefined ||       // Always create ASG if FleetPerSlice not known
-            configuration.serverRole.FleetPerSlice === false ||           // Always create ASG in single ASG mode
-            asgName.endsWith(`-${slice}`);                                // Create ASG if it's the target slice
+          configuration.serverRole.FleetPerSlice === undefined ||       // Always create ASG if FleetPerSlice not known
+          configuration.serverRole.FleetPerSlice === false ||           // Always create ASG in single ASG mode
+          asgName.endsWith(`-${slice}`);                                // Create ASG if it's the target slice
       });
 
-    let autoScalingGroupNamesToCreate = yield getASGNamesToCreate(logger, autoScalingGroupNames, accountName);
+    let autoScalingGroupNamesToCreate = yield getASGNamesToCreate(logger, autoScalingGroupNames, accountId);
     return autoScalingTemplates.filter(template =>
       autoScalingGroupNamesToCreate.indexOf(template.autoScalingGroupName) >= 0
     );
   });
 }
 
-function getASGNamesToCreate(logger, autoScalingGroupNames, accountName) {
+function getASGNamesToCreate(logger, autoScalingGroupNames, accountId) {
   return co(function* () {
     logger.info(`Following AutoScalingGroups are expected: [${autoScalingGroupNames.join(', ')}]`);
-    let query = {
-      name: 'ScanAutoScalingGroups',
-      accountName,
-      autoScalingGroupNames
-    };
-
-    let autoScalingGroups = yield sender.sendQuery({ query });
+    let autoScalingGroups = yield ScanAutoScalingGroups({ accountId, autoScalingGroupNames });
     let existingASGnames = autoScalingGroups.map(group =>
       group.AutoScalingGroupName
     );
@@ -140,13 +138,7 @@ function getLaunchConfigsToCreate(logger, configuration, autoScalingTemplates, a
 function getLaunchConfigNamesToCreate(logger, launchConfigurationNames, accountName) {
   return co(function* () {
     logger.info(`Following LaunchConfigurations are expected: [${launchConfigurationNames.join(', ')}]`);
-    let query = {
-      name: 'ScanLaunchConfigurations',
-      accountName,
-      launchConfigurationNames
-    };
-
-    let launchConfigurations = yield sender.sendQuery({ query });
+    let launchConfigurations = yield ScanLaunchConfigurations({ accountName, launchConfigurationNames });
     let existingLaunchConfigurationNames = launchConfigurations.map(config =>
       config.LaunchConfigurationName
     );

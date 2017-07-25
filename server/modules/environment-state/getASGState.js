@@ -10,7 +10,7 @@ let getInstanceState = require('./getInstanceState');
 let getServicesState = require('./getServicesState');
 let getAWSInstances = require('./getAWSInstances');
 
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let logger = require('modules/logger');
 let Environment = require('models/Environment');
 let Enums = require('Enums');
@@ -47,7 +47,7 @@ function getServicesSummary(services) {
 module.exports = function getASGState(environmentName, asgName) {
   return co(function* () {
     const accountName = yield (yield Environment.getByName(environmentName)).getAccountName();
-    let asg = yield AutoScalingGroup.getByName(accountName, asgName);
+    let asg = yield AsgResource.get({ environmentName, name: asgName });
 
     let instancesIds = _.map(asg.Instances, 'InstanceId');
     let instances = yield getAWSInstances(accountName, instancesIds);

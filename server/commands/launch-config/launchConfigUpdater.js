@@ -3,19 +3,19 @@
 'use strict';
 
 let co = require('co');
-let resourceProvider = require('modules/resourceProvider');
+let { createLaunchConfigurationResource } = require('modules/resourceFactories/launchConfigurationResourceFactory');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 
 module.exports = {
   //
-  set(accountName, autoScalingGroup, updateAction) {
+  set(environmentName, autoScalingGroup, updateAction) {
     return co(function* () {
       // Obtain an object containing resource instances to work with
       // LaunchConfigurations and AutoScalingGroups
       //
       let autoScalingGroupName = autoScalingGroup.$autoScalingGroupName;
 
-      let launchConfigurationClient = yield resourceProvider.getInstanceByName('launchconfig', { accountName });
-      let autoScalingGroupClient = yield resourceProvider.getInstanceByName('asgs', { accountName });
+      let launchConfigurationClient = yield createLaunchConfigurationResource({ environmentName });
 
       // Send a request to obtain the LaunchConfiguration for the specific
       // AutoScalingGroup
@@ -37,7 +37,7 @@ module.exports = {
       // [AutoScalingGroup] <---> [LaunchConfiguration_Backup]
 
       yield attachLaunchConfigurationToAutoScalingGroup(
-        autoScalingGroupClient, autoScalingGroupName, backupLaunchConfiguration
+        environmentName, autoScalingGroupName, backupLaunchConfiguration
       );
 
       // Delete the original LaunchConfiguration (a LaunchConfiguration cannot be
@@ -63,7 +63,7 @@ module.exports = {
       //                          [LaunchConfiguration_Backup]
 
       yield attachLaunchConfigurationToAutoScalingGroup(
-        autoScalingGroupClient, autoScalingGroupName, updatedLaunchConfiguration
+        environmentName, autoScalingGroupName, updatedLaunchConfiguration
       );
 
       // Delete the backup LaunchConfiguration as no longer needed.
@@ -74,11 +74,12 @@ module.exports = {
   }
 };
 
-function attachLaunchConfigurationToAutoScalingGroup(autoScalingGroupClient, autoScalingGroupName, launchConfiguration) {
+function attachLaunchConfigurationToAutoScalingGroup(environmentName, autoScalingGroupName, launchConfiguration) {
   let parameters = {
+    environmentName,
     name: autoScalingGroupName,
     launchConfigurationName: launchConfiguration.LaunchConfigurationName
   };
 
-  return autoScalingGroupClient.put(parameters);
+  return AsgResource.put(parameters);
 }

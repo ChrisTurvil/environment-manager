@@ -12,7 +12,7 @@ let _ = require('lodash');
  */
 module.exports = {
 
-  getFromSecurityGroupNames(accountName, vpcId, securityGroupNamesAndReasons, logger) {
+  getFromSecurityGroupNames(accountId, region, vpcId, securityGroupNamesAndReasons, logger) {
     let securityGroupNames = [];
     let securityGroupNamesAndReasonsMapping = {};
 
@@ -21,21 +21,22 @@ module.exports = {
       securityGroupNamesAndReasonsMapping[group.name] = group.reason;
     });
 
-    return SecurityGroup.getAllByNames(accountName, vpcId, securityGroupNames)
+    return SecurityGroup.getAllByNames(accountId, region, vpcId, securityGroupNames)
       .then(securityGroups =>
         getAndVerifyAllExpectedSecurityGroups(securityGroups, vpcId, securityGroupNamesAndReasonsMapping, logger)
       );
   },
 
-  getFromConfiguration(configuration, image, accountName, logger) {
+  getFromConfiguration(configuration, image, accountId, region, logger) {
     assert(configuration, 'Expected "configuration" argument not to be null');
     assert(image, 'Expected "image" argument not to be null');
-    assert(accountName, 'Expected "accountName" argument not to be null');
+    assert(accountId, 'Expected "accountId" argument not to be null');
+    assert(region, 'Expected "accountId" argument not to be null');
 
     let vpcId = configuration.environmentType.VpcId;
     let securityGroupNamesAndReasons = getSecurityGroupsNamesAndReasons(configuration, image);
 
-    return this.getFromSecurityGroupNames(accountName, vpcId, securityGroupNamesAndReasons, logger);
+    return this.getFromSecurityGroupNames(accountId, region, vpcId, securityGroupNamesAndReasons, logger);
   }
 
 };

@@ -2,8 +2,12 @@
 
 'use strict';
 
-let scanCrossAccount = require('modules/queryHandlersUtil/scanCrossAccount');
+let Promise = require('bluebird');
+let fp = require('lodash/fp');
+let AsgResource = require('modules/resourceFactories/AsgResource');
+let { scanPartitions } = require('modules/amazon-client/awsPartitions');
 
 module.exports = function ScanCrossAccountAutoScalingGroups(query) {
-  return scanCrossAccount(query, 'ScanAutoScalingGroups');
+  return Promise.map(scanPartitions(), ({ accountId, region }) => AsgResource.all({ accountId, region }))
+    .then(fp.flatten);
 };

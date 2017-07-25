@@ -4,15 +4,10 @@
 
 let scheduling = require('modules/scheduling');
 let cronService = require('modules/cronService')();
+let { get: getASG } = require('modules/resourceFactories/AsgResource');
 
-function getAutoScalingGroup(query) {
-  let sender = require('modules/sender');
-  let childQuery = {
-    name: 'GetAutoScalingGroup',
-    accountName: query.accountName,
-    autoScalingGroupName: query.autoScalingGroupName
-  };
-  return sender.sendQuery({ query: childQuery });
+function getAutoScalingGroup({ autoScalingGroupName, environmentName }) {
+  return getASG({ environmentName, name: autoScalingGroupName });
 }
 
 function getAutoScalingGroupScheduledActions(query) {

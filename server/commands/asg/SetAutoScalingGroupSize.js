@@ -2,16 +2,21 @@
 
 'use strict';
 
+let assert = require('assert');
 let co = require('co');
 let _ = require('lodash');
-let resourceProvider = require('modules/resourceProvider');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 let InvalidOperationError = require('modules/errors/InvalidOperationError.class');
 
-function* handler(command) {
-  // Validation
-  let min = command.autoScalingGroupMinSize;
-  let desired = command.autoScalingGroupDesiredSize;
-  let max = command.autoScalingGroupMaxSize;
+function* handler({
+  autoScalingGroupDesiredSize: desired,
+  autoScalingGroupMaxSize: max,
+  autoScalingGroupMinSize: min,
+  autoScalingGroupName,
+  environmentName
+}) {
+  assert(autoScalingGroupName !== undefined);
+  assert(environmentName !== undefined);
 
   if (!_.isNil(min)) {
     if (!_.isNil(max) && min > max) {
@@ -41,20 +46,16 @@ function* handler(command) {
     }
   }
 
-  // Get a resource instance to work with AutoScalingGroup in the proper
-  // AWS account.
-  let parameters = { accountName: command.accountName };
-  let resource = yield resourceProvider.getInstanceByName('asgs', parameters);
-
   // Change the AutoScalingGroup size accordingly to the expected one.
-  parameters = {
-    name: command.autoScalingGroupName,
-    minSize: command.autoScalingGroupMinSize,
-    desiredSize: command.autoScalingGroupDesiredSize,
-    maxSize: command.autoScalingGroupMaxSize
+  let parameters = {
+    environmentName,
+    name: autoScalingGroupName,
+    minSize: min,
+    desiredSize: desired,
+    maxSize: max
   };
 
-  return resource.put(parameters);
+  return AsgResource.put(parameters);
 }
 
 module.exports = co.wrap(handler);

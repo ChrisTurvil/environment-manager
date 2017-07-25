@@ -2,8 +2,10 @@
 
 'use strict';
 
-let _ = require('lodash');
-let { getPartitionsInAccount } = require('modules/amazon-client/awsPartitions');
+let assert = require('assert');
+let {
+  getPartitionForEnvironment
+} = require('modules/amazon-client/awsPartitions');
 let { createASGClient } = require('modules/amazon-client/childAccountClient');
 let AwsError = require('modules/errors/AwsError.class');
 let AutoScalingGroupNotFoundError = require('modules/errors/AutoScalingGroupNotFoundError.class');
@@ -12,22 +14,42 @@ let cacheManager = require('modules/cacheManager');
 let fp = require('lodash/fp');
 let logger = require('modules/logger');
 let pages = require('modules/amazon-client/pages');
+let { hasTag } = require('modules/awsTags');
+let AutoScalingGroup = require('models/AutoScalingGroup');
 
-function getAllAsgsInAccount(accountId, names) {
-  logger.debug(`Describing all ASGs in account "${accountId}"...`);
-  let request = (names && names.length) ? { AutoScalingGroupNames: names } : {};
-  let asgDescriptions = getPartitionsInAccount(accountId)
-    .then(ps => Promise.map(ps, ({ region }) => createASGClient(accountId, region)
-      .then(client => pages.flatten(page => page.AutoScalingGroups, client.describeAutoScalingGroups(request)))))
-    .then(fp.flatten);
-  return asgDescriptions;
+let {
+  clear: clearAsgsFromCache,
+  get: getAsgsFromCache
+} =
+  (() => {
+    function getAllAsgsInPartition(cacheKey) {
+      let { accountId, region } = JSON.parse(cacheKey);
+      logger.debug(`Describing all ASGs in region ${region} in account ${accountId}...`);
+      return createASGClient(accountId, region)
+        .then(client => pages.flatten(page => page.AutoScalingGroups, client.describeAutoScalingGroups()))
+        .then(fp.flatten);
+    }
+
+    let asgCache = cacheManager.create('Auto Scaling Groups', getAllAsgsInPartition, { stdTTL: 60 });
+
+    return {
+      clear({ accountId, region }) {
+        let cacheKey = JSON.stringify({ accountId, region });
+        return asgCache.del(cacheKey);
+      },
+      get({ accountId, region }) {
+        let cacheKey = JSON.stringify({ accountId, region });
+        return asgCache.get(cacheKey);
+      }
+    };
+  })();
+
+function asgClientForEnvironment(environmentName) {
+  return getPartitionForEnvironment(environmentName)
+    .then(({ accountId, region }) => createASGClient(accountId, region));
 }
 
-let asgCache = cacheManager.create('Auto Scaling Groups', getAllAsgsInAccount, { stdTTL: 60 });
-
-function AsgResource(accountId) {
-  let asgClient = () => createASGClient(accountId);
-
+function AsgResource() {
   function standardifyError(error, autoScalingGroupName) {
     if (!error) return null;
     let awsError = new AwsError(error.message);
@@ -43,7 +65,7 @@ function AsgResource(accountId) {
     return awsError;
   }
 
-  function describeAutoScalingGroups(names) {
+  function describeAutoScalingGroups({ accountId, region, names }) {
     let predicate = (() => {
       if (names && names.length) {
         let nameSet = new Set(names);
@@ -53,118 +75,150 @@ function AsgResource(accountId) {
       }
     })();
 
-    let AutoScalingGroup = require('models/AutoScalingGroup'); // Making this require global results in a module dependency cycle!
-    return asgCache.get(accountId).then(fp.flow(fp.filter(predicate), fp.map(asg => new AutoScalingGroup(asg))));
+    return getAsgsFromCache({ accountId, region }).then(fp.flow(fp.filter(predicate), fp.map(asg => new AutoScalingGroup(asg))));
   }
 
-  this.get = function (parameters) {
-    if (parameters.clearCache === true) {
-      asgCache.del(accountId);
-    }
-    return describeAutoScalingGroups([parameters.name]).then((result) => {
-      if (result.length > 0) return result[0];
-      throw new AutoScalingGroupNotFoundError(`AutoScalingGroup "${parameters.name}" not found.`);
-    }).catch((error) => {
-      throw new AwsError(error.message);
-    });
+  this.get = function ({ clearCache = false, environmentName, name }) {
+    assert(environmentName, 'environmentName is required');
+    assert(name, 'name is required');
+    return getPartitionForEnvironment(environmentName)
+      .then(({ accountId, region }) => {
+        if (clearCache === true) {
+          clearAsgsFromCache({ accountId, region });
+        }
+        return { accountId, region };
+      })
+      .then(partition => describeAutoScalingGroups(partition, [name]))
+      .then((result) => {
+        if (result.length > 0) return result[0];
+        throw new AutoScalingGroupNotFoundError(`AutoScalingGroup "${name}" not found.`);
+      }).catch((error) => {
+        throw new AwsError(error.message);
+      });
   };
 
-  this.all = function (parameters) {
-    return describeAutoScalingGroups(parameters.names);
+  this.all = function ({ accountId, region, names }) {
+    return describeAutoScalingGroups({ accountId, region }, names);
   };
 
-  this.setTag = function (parameters) {
+  this.setTag = function ({ environmentName, name, tagKey, tagValue }) {
     let request = {
       Tags: [{
-        Key: parameters.tagKey,
+        Key: tagKey,
         PropagateAtLaunch: true,
-        ResourceId: parameters.name,
+        ResourceId: name,
         ResourceType: 'auto-scaling-group',
-        Value: parameters.tagValue
+        Value: tagValue
       }]
     };
-    return asgClient().then(client => client.createOrUpdateTags(request).promise()).catch((error) => {
-      throw standardifyError(error, parameters.name);
-    });
+    return asgClientForEnvironment(environmentName)
+      .then(client => client.createOrUpdateTags(request).promise())
+      .catch((error) => {
+        throw standardifyError(error, name);
+      });
   };
 
-  this.delete = function ({ name, force }) {
+  this.delete = function ({ environmentName, name, force }) {
     logger.warn(`Deleting Auto Scaling Group "${name}"`);
-    return asgClient().then(client => client.deleteAutoScalingGroup({ AutoScalingGroupName: name, ForceDelete: force }).promise());
+    return asgClientForEnvironment(environmentName)
+      .then(client => client.deleteAutoScalingGroup({ AutoScalingGroupName: name, ForceDelete: force }).promise());
   };
 
   this.put = function (parameters) {
-    let request = {
-      AutoScalingGroupName: parameters.name
-    };
-
-    if (!_.isNil(parameters.minSize)) {
-      request.MinSize = parameters.minSize;
-    }
-
-    if (!_.isNil(parameters.desiredSize)) {
-      request.DesiredCapacity = parameters.desiredSize;
-    }
-
-    if (!_.isNil(parameters.maxSize)) {
-      request.MaxSize = parameters.maxSize;
-    }
-
-    if (parameters.launchConfigurationName) {
-      request.LaunchConfigurationName = parameters.launchConfigurationName;
-    }
-
-    if (!_.isNil(parameters.subnets)) {
-      request.VPCZoneIdentifier = parameters.subnets.join(',');
-    }
-
-    asgCache.del(accountId);
-
-    return asgClient().then(client => client.updateAutoScalingGroup(request).promise()).catch((error) => {
-      throw standardifyError(error, parameters.name);
+    let request = fp.omitBy(fp.isNil)({
+      AutoScalingGroupName: parameters.name,
+      MinSize: parameters.minSize,
+      DesiredCapacity: parameters.desiredSize,
+      MaxSize: parameters.maxSize,
+      LaunchConfigurationName: parameters.launchConfigurationName,
+      VPCZoneIdentifier: parameters.subnets.join(',')
     });
+
+    return getPartitionForEnvironment(parameters.environmentName)
+      .then((partition) => {
+        let { accountId, region } = partition;
+        clearAsgsFromCache({ accountId, region });
+        return partition;
+      })
+      .then(({ accountId, region }) => createASGClient(accountId, region))
+      .then(client => client.updateAutoScalingGroup(request).promise())
+      .catch((error) => {
+        throw standardifyError(error, parameters.name);
+      });
   };
 
-  this.enterInstancesToStandby = (parameters) => {
+  this.enterInstancesToStandby = ({ environmentName, instanceIds, name }) => {
     let request = {
-      AutoScalingGroupName: parameters.name,
+      AutoScalingGroupName: name,
       ShouldDecrementDesiredCapacity: true,
-      InstanceIds: parameters.instanceIds
+      InstanceIds: instanceIds
     };
-    return asgClient().then(client => client.enterStandby(request).promise());
+    return asgClientForEnvironment(environmentName)
+      .then(client => client.enterStandby(request).promise());
   };
 
-  this.exitInstancesFromStandby = (parameters) => {
+  this.exitInstancesFromStandby = ({ environmentName, instanceIds, name }) => {
     let request = {
-      AutoScalingGroupName: parameters.name,
-      InstanceIds: parameters.instanceIds
+      AutoScalingGroupName: name,
+      InstanceIds: instanceIds
     };
-    return asgClient().then(client => client.exitStandby(request).promise());
+    return asgClientForEnvironment(environmentName)
+      .then(client => client.exitStandby(request).promise());
   };
 
-  this.post = request => asgClient().then(client => client.createAutoScalingGroup(request).promise().catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.post = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.createAutoScalingGroup(fp.omit('environmentName')(request)).promise())
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
 
-  this.attachNotifications = request => asgClient().then(client => client.putNotificationConfiguration(request).promise().catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.attachNotifications = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.putNotificationConfiguration(fp.omit('environmentName')(request)).promise())
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
 
-  this.attachLifecycleHook = request => asgClient().then(client => client.putLifecycleHook(request).promise().catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.attachLifecycleHook = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.putLifecycleHook(fp.omit('environmentName')(request)).promise())
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
 
-  this.describeScheduledActions = request => asgClient().then(client => client.describeScheduledActions(request).promise().then(result => result.ScheduledUpdateGroupActions).catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.describeScheduledActions = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.describeScheduledActions(fp.omit('environmentName')(request)).promise())
+      .then(result => result.ScheduledUpdateGroupActions)
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
 
-  this.deleteScheduledAction = request => asgClient().then(client => client.deleteScheduledAction(request).promise().catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.deleteScheduledAction = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.deleteScheduledAction(fp.omit('environmentName')(request)).promise())
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
 
-  this.createScheduledAction = request => asgClient().then(client => client.putScheduledUpdateGroupAction(request).promise().catch((error) => {
-    throw standardifyError(error, request.AutoScalingGroupName);
-  }));
+  this.createScheduledAction = request =>
+    asgClientForEnvironment(request.environmentName)
+      .then(client => client.putScheduledUpdateGroupAction(fp.omit('environmentName')(request)).promise())
+      .catch((error) => {
+        throw standardifyError(error, request.AutoScalingGroupName);
+      });
+
+  this.getAllByEnvironment = ({ environmentName }) => getPartitionForEnvironment(environmentName)
+    .then(({ accountId, region }) => getAsgsFromCache({ accountId, region }))
+    .then(fp.filter(hasTag('Environment', x => x === environmentName)))
+    .then(fp.map(asg => new AutoScalingGroup(asg)));
+
+  this.getAllByServerRoleName = ({ environmentName, serverRoleName }) => getPartitionForEnvironment(environmentName)
+    .then(({ accountId, region }) => getAsgsFromCache({ accountId, region }))
+    .then(fp.filter(asg => hasTag('Environment', x => x === environmentName)(asg)
+      && hasTag('Role', x => x === serverRoleName)(asg)))
+    .then(fp.map(asg => new AutoScalingGroup(asg)));
 }
 
-module.exports = AsgResource;
+module.exports = new AsgResource();

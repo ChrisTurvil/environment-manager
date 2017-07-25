@@ -5,13 +5,11 @@
 let _ = require('lodash');
 let Enums = require('Enums');
 let co = require('co');
-let getASG = require('queryHandlers/GetAutoScalingGroup');
-let Environment = require('models/Environment');
+let { get: getASG } = require('modules/resourceFactories/AsgResource');
 
 function* getASGReady({ autoScalingGroupName, environmentName }) {
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    return getASG({ accountName, autoScalingGroupName }).then((data) => {
+    return getASG({ environmentName, name: autoScalingGroupName }).then((data) => {
       let instances = data.Instances;
       let instancesInService = _.filter(instances, { LifecycleState: Enums.ASGLifecycleState.IN_SERVICE });
       let instancesByLifecycleState = _(instances).groupBy('LifecycleState').mapValues(list => list.length).value();

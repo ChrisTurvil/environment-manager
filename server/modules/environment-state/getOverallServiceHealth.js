@@ -8,7 +8,7 @@ let HEALTH_STATUS = Enums.HEALTH_STATUS;
 let co = require('co');
 let GetServerRoles = require('queryHandlers/services/GetServerRoles');
 let getASGState = require('./getASGState');
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 
 function* getOverallServiceHealth({ environmentName, serviceName }) {
   let serviceRoles = (yield GetServerRoles({ environmentName })).Value;
@@ -20,8 +20,8 @@ function* getOverallServiceHealth({ environmentName, serviceName }) {
   serviceRoles = _.filter(serviceRoles, role => _.isEmpty(role.Services) === false);
 
   let list = [];
-  for (let role of serviceRoles) {
-    let autoScalingGroups = yield AutoScalingGroup.getAllByServerRoleName(environmentName, role.Role);
+  for (let { Role: serverRoleName } of serviceRoles) {
+    let autoScalingGroups = yield AsgResource.getAllByServerRoleName({ environmentName, serverRoleName });
     let state;
 
     for (let asg of autoScalingGroups) {

@@ -6,8 +6,7 @@ let _ = require('lodash');
 let co = require('co');
 let getAllASGs = require('queryHandlers/ScanCrossAccountAutoScalingGroups');
 let getAccountASGs = require('queryHandlers/ScanAutoScalingGroups');
-let getASG = require('queryHandlers/GetAutoScalingGroup');
-let AutoScalingGroup = require('models/AutoScalingGroup');
+let { get: getASG } = require('modules/resourceFactories/AsgResource');
 let asgips = require('modules/data-access/asgips');
 let GetLaunchConfiguration = require('queryHandlers/GetLaunchConfiguration');
 let SetLaunchConfiguration = require('commands/launch-config/SetLaunchConfiguration');
@@ -18,6 +17,9 @@ let GetAutoScalingGroupScheduledActions = require('queryHandlers/GetAutoScalingG
 let getASGReady = require('modules/environment-state/getASGReady');
 let Environment = require('models/Environment');
 let sns = require('modules/sns/EnvironmentManagerEvents');
+let deleteAutoScalingGroup = require('commands/asg/deleteAutoScalingGroup');
+let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
+let { getByName: getAccount } = require('modules/awsAccounts');
 
 /**
  * GET /asgs
@@ -29,15 +31,12 @@ function getAsgs(req, res, next) {
   return co(function* () {
     let list;
     if (environment !== undefined) {
-      let account = yield Environment.getAccountNameForEnvironment(environment);
-      let t = yield getAccountASGs({
-        accountName: account
-      });
+      let { accountId, region } = yield getPartitionForEnvironment(environment);
+      let t = yield getAccountASGs({ accountId, region });
       list = t.filter(asg => asg.getTag('Environment') === environment);
     } else if (accountName !== undefined) {
-      list = yield getAccountASGs({
-        accountName
-      });
+      let { AccountNumber: accountId } = yield getAccount(accountName);
+      list = yield getAccountASGs({ accountId });
     } else {
       list = yield getAllASGs();
     }
@@ -53,10 +52,9 @@ function getAsgByName(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
   const environmentName = req.swagger.params.environment.value;
 
-  return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    return getASG({ accountName, autoScalingGroupName }).then(data => res.json(data));
-  }).catch(next);
+  return getASG({ environmentName, name: autoScalingGroupName })
+    .then(data => res.json(data))
+    .catch(next);
 }
 
 
@@ -94,10 +92,9 @@ function getAsgLaunchConfig(req, res, next) {
   const environmentName = req.swagger.params.environment.value;
   const autoScalingGroupName = req.swagger.params.name.value;
 
-  return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    GetLaunchConfiguration({ accountName, autoScalingGroupName }).then(data => res.json(data));
-  }).catch(next);
+  return GetLaunchConfiguration({ environmentName, autoScalingGroupName })
+    .then(data => res.json(data))
+    .catch(next);
 }
 
 /**
@@ -107,10 +104,9 @@ function getScalingSchedule(req, res, next) {
   const environmentName = req.swagger.params.environment.value;
   const autoScalingGroupName = req.swagger.params.name.value;
 
-  return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    GetAutoScalingGroupScheduledActions({ accountName, autoScalingGroupName }).then(data => res.json(data));
-  }).catch(next);
+  return GetAutoScalingGroupScheduledActions({ environmentName, autoScalingGroupName })
+    .then(data => res.json(data))
+    .catch(next);
 }
 
 /**
@@ -153,9 +149,7 @@ function deleteAsg(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
-    AutoScalingGroup.getByName(accountName, autoScalingGroupName)
-      .then(asg => asg.deleteASG())
+    deleteAutoScalingGroup({ environmentName, autoScalingGroupName })
       .then((status) => {
         res.json({
           Ok: status
@@ -188,13 +182,11 @@ function putScalingSchedule(req, res, next) {
 
   return co(function* () {
     let data = {};
-
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
     let schedule = body.schedule;
     let propagateToInstances = body.propagateToInstances;
 
     data = yield SetAutoScalingGroupSchedule({
-      accountName,
+      environmentName,
       autoScalingGroupName,
       schedule,
       propagateToInstances
@@ -231,9 +223,8 @@ function putAsgSize(req, res, next) {
   const autoScalingGroupMaxSize = body.max;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
     SetAutoScalingGroupSize({
-      accountName,
+      environmentName,
       autoScalingGroupName,
       autoScalingGroupMinSize,
       autoScalingGroupDesiredSize,
@@ -266,9 +257,8 @@ function putAsgLaunchConfig(req, res, next) {
   const autoScalingGroupName = req.swagger.params.name.value;
 
   return co(function* () {
-    let accountName = yield Environment.getAccountNameForEnvironment(environmentName);
     SetLaunchConfiguration({
-      accountName,
+      environmentName,
       autoScalingGroupName,
       data
     })

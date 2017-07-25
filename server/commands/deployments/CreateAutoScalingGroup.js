@@ -6,42 +6,41 @@ let assert = require('assert');
 let co = require('co');
 let ms = require('ms');
 let DeploymentCommandHandlerLogger = require('commands/deployments/DeploymentCommandHandlerLogger');
-let autoScalingGroupClientFactory = require('modules/clientFactories/autoScalingGroupClientFactory');
+let AsgResource = require('modules/resourceFactories/AsgResource');
 
 module.exports = function CreateAutoScalingGroupCommandHandler(command) {
   let logger = new DeploymentCommandHandlerLogger(command);
 
+  let {
+    environmentName,
+    template
+  } = command;
+
   assert(command, 'Expected "command" argument not to be null.');
-  assert(command.template, 'Expected "command" argument to contain "template" property not null.');
-  assert(command.accountName, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(template, 'Expected "command" argument to contain "template" property not null.');
+  assert(environmentName, 'Expected "command" argument to contain "accountName" property not null or empty.');
 
   return co(function* () {
-    let template = command.template;
-    let accountName = command.accountName;
     let autoScalingGroupName = template.autoScalingGroupName;
 
     logger.info(`Creating [${autoScalingGroupName}] AutoScalingGroup...`);
 
-    let autoScalingGroupClient = yield autoScalingGroupClientFactory.create({
-      accountName
-    });
-
     let request = getCreateAutoScalingGroupRequest(template);
-    yield createAutoScalingGroup(logger, autoScalingGroupClient, request);
+    yield createAutoScalingGroup(logger, environmentName, request);
 
     logger.info(`AutoScalingGroup [${autoScalingGroupName}] has been created`);
     logger.info(`Configuring [${autoScalingGroupName}] AutoScalingGroup...`);
 
     yield [
-      attachNotificationsByTemplate(logger, autoScalingGroupClient, template),
-      attachLifecycleHooksByTemplate(logger, autoScalingGroupClient, template)
+      attachNotificationsByTemplate(logger, environmentName, template),
+      attachLifecycleHooksByTemplate(logger, environmentName, template)
     ];
 
     logger.info(`AutoScalingGroup [${autoScalingGroupName}] has been configured`);
   });
 };
 
-function attachNotificationsByTemplate(logger, autoScalingGroupClient, template) {
+function attachNotificationsByTemplate(logger, environmentName, template) {
   return co(function* () {
     let autoScalingGroupName = template.autoScalingGroupName;
     let requests = getAttachNotificationsRequests(template);
@@ -53,13 +52,13 @@ function attachNotificationsByTemplate(logger, autoScalingGroupClient, template)
 
     logger.info(`Attaching [${autoScalingGroupName}] AutoScalingGroup notifications to SNS topics...`);
 
-    yield requests.map(request => attachNotifications(autoScalingGroupClient, request));
+    yield requests.map(request => attachNotifications(environmentName, request));
 
     logger.info(`All [${autoScalingGroupName}] AutoScalingGroup notifications have been attached to SNS topics`);
   });
 }
 
-function attachLifecycleHooksByTemplate(logger, autoScalingGroupClient, template) {
+function attachLifecycleHooksByTemplate(logger, environmentName, template) {
   return co(function* () {
     let autoScalingGroupName = template.autoScalingGroupName;
     let requests = getAttachLifecycleHookRequests(template);
@@ -71,7 +70,7 @@ function attachLifecycleHooksByTemplate(logger, autoScalingGroupClient, template
 
     logger.info(`Attaching lifecycle hooks to [${autoScalingGroupName}] AutoScalingGroup...`);
 
-    yield requests.map(request => attachLifecycleHook(autoScalingGroupClient, request));
+    yield requests.map(request => attachLifecycleHook(environmentName, request));
 
     logger.info(`All lifecycle hooks have been attached to [${autoScalingGroupName}] AutoScalingGroup`);
   });
@@ -80,16 +79,16 @@ function attachLifecycleHooksByTemplate(logger, autoScalingGroupClient, template
 // ----------------------------------------------------------------------------------------------
 // Functions to promisify [autoScalingGroupClient] interface
 
-function createAutoScalingGroup(logger, autoScalingGroupClient, request) {
-  return autoScalingGroupClient.post(request);
+function createAutoScalingGroup(logger, environmentName, request) {
+  return AsgResource.post(Object.assign({ environmentName }, request));
 }
 
-function attachNotifications(autoScalingGroupClient, request) {
-  return autoScalingGroupClient.attachNotifications(request);
+function attachNotifications(environmentName, request) {
+  return AsgResource.attachNotifications(Object.assign({ environmentName }, request));
 }
 
-function attachLifecycleHook(autoScalingGroupClient, request) {
-  return autoScalingGroupClient.attachLifecycleHook(request);
+function attachLifecycleHook(environmentName, request) {
+  return AsgResource.attachLifecycleHook(Object.assign({ environmentName }, request));
 }
 
 // ----------------------------------------------------------------------------------------------

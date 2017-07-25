@@ -5,7 +5,8 @@
 let co = require('co');
 let LifecycleHookType = require('Enums').LifecycleHookType;
 let LifecycleHookDefaultResult = require('Enums').LifecycleHookDefaultResult;
-let sender = require('modules/sender');
+let GetRole = require('queryHandlers/GetRole');
+let GetTopic = require('queryHandlers/GetTopic');
 
 module.exports = {
   get(accountName) {
@@ -26,21 +27,9 @@ module.exports = {
 };
 
 function getRoleByName(roleName, accountName) {
-  let query = {
-    name: 'GetRole',
-    accountName,
-    roleName
-  };
-
-  return sender.sendQuery({ query });
+  return GetRole({ accountName, roleName });
 }
 
 function getTopicByName(topicName, accountName) {
-  let query = {
-    name: 'GetTopic',
-    accountName,
-    topicName
-  };
-
-  return sender.sendQuery({ query });
+  return GetTopic({ accountName, topicName });
 }

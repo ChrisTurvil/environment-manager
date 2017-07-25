@@ -2,18 +2,16 @@
 
 'use strict';
 
-let resourceProvider = require('modules/resourceProvider');
+let assert = require('assert');
+let { createEC2Client } = require('modules/amazon-client/childAccountClient');
+let SecurityGroupResource = require('modules/resourceFactories/SecurityGroupResource');
 
-module.exports = function ScanSecurityGroupsQueryHandler(query) {
-  let parameters = { accountName: query.accountName };
+module.exports = function ScanSecurityGroupsQueryHandler(
+  { accountId, groupIds, groupNames, region, vpcId }) {
+  assert(accountId !== undefined, 'accountId is required');
+  assert(region !== undefined, 'region is required');
 
-  return resourceProvider.getInstanceByName('sg', parameters).then((resource) => {
-    let request = {
-      vpcId: query.vpcId,
-      groupIds: query.groupIds,
-      groupNames: query.groupNames
-    };
-
-    return resource.scan(request);
-  });
+  return createEC2Client(accountId, region)
+    .then(client => new SecurityGroupResource(client))
+    .then(resource => resource.scan({ vpcId, groupIds, groupNames }));
 };
