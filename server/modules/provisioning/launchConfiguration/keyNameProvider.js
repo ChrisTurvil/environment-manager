@@ -3,15 +3,15 @@
 'use strict';
 
 let assert = require('assert');
-let sender = require('modules/sender');
-
+let GetKeyPair = require('queryHandlers/GetKeyPair');
 let ConfigurationError = require('modules/errors/ConfigurationError.class');
 
 module.exports = {
-  get(configuration) {
-    assert(configuration, 'Expected "configuration" argument not to be null');
-    let customKeyName = configuration.serverRole.ClusterKeyName;
-    let { environmentName } = configuration;
+  get({
+    cluster: { KeyPair: keyName },
+    environmentName,
+    serverRole: { ClusterKeyName: customKeyName } }) {
+    assert(environmentName !== undefined, 'environmentName is required');
     if (customKeyName) {
       return getKeyPairByName(customKeyName, environmentName)
         .then(
@@ -21,7 +21,6 @@ module.exports = {
           error))
         );
     } else {
-      let keyName = configuration.cluster.KeyPair;
       if (keyName === '' || keyName === undefined || keyName === null) {
         return Promise.reject(
           new ConfigurationError('Server role EC2 key pair set to cluster EC2 key pair, but this is empty. Please fix your configuration'));
@@ -40,11 +39,5 @@ module.exports = {
 };
 
 function getKeyPairByName(keyName, environmentName) {
-  let query = {
-    name: 'GetKeyPair',
-    environmentName,
-    keyName
-  };
-
-  return sender.sendQuery({ query });
+  return GetKeyPair({ environmentName, keyName });
 }

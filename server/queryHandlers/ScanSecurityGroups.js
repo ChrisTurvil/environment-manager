@@ -5,6 +5,7 @@
 let assert = require('assert');
 let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let SecurityGroupResource = require('modules/resourceFactories/SecurityGroupResource');
+let SecurityGroup = require('models/SecurityGroup');
 
 module.exports = function ScanSecurityGroupsQueryHandler(
   { accountId, groupIds, groupNames, region, vpcId }) {
@@ -13,5 +14,6 @@ module.exports = function ScanSecurityGroupsQueryHandler(
 
   return createEC2Client(accountId, region)
     .then(client => new SecurityGroupResource(client))
-    .then(resource => resource.scan({ vpcId, groupIds, groupNames }));
+    .then(resource => resource.scan({ vpcId, groupIds, groupNames }))
+    .then(sgs => sgs.map(sg => new SecurityGroup(sg)));
 };

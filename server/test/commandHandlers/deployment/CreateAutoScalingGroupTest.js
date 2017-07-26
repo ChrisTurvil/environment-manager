@@ -1,16 +1,14 @@
-/* TODO: enable linting and fix resulting errors */
-/* eslint-disable */
 /* Copyright (c) Trainline Limited, 2016-2017. All rights reserved. See LICENSE.txt in the project root for license information. */
+
 'use strict';
 
+require('should');
 let sinon = require('sinon');
-let should = require('should');
-let rewire = require('rewire');
+let proxyquire = require('proxyquire');
 
-describe('CreateAutoScalingGroup', function() {
-
+describe('CreateAutoScalingGroup', function () {
   const name = 'CreateAutoScalingGroup';
-  const accountName = 'Prod';
+  const environmentName = 'my-env';
   const autoScalingGroupName = 'auto-scaling-group';
   const launchConfigurationName = 'launch-configuration';
   const topicNotificationMapping = [];
@@ -35,7 +33,6 @@ describe('CreateAutoScalingGroup', function() {
   };
 
   let autoScalingClientMock;
-  let autoScalingGroupClientFactory;
   let command;
   let sut;
 
@@ -43,36 +40,28 @@ describe('CreateAutoScalingGroup', function() {
     autoScalingClientMock = { post: sinon.stub() };
     autoScalingClientMock.post.returns(Promise.resolve());
 
-    autoScalingGroupClientFactory = { create: sinon.stub().returns(Promise.resolve(autoScalingClientMock)) };
-    command = { name, accountName, template };
+    command = { name, environmentName, template };
 
-    sut = rewire('commands/deployments/CreateAutoScalingGroup.js');
-    sut.__set__({ autoScalingGroupClientFactory });
-  });
-
-  it('creates an ASG client for the correct account', () => {
-    return sut(command).then(() => {
-      autoScalingGroupClientFactory.create.called.should.be.true();
-      autoScalingGroupClientFactory.create.getCall(0).args.should.match(
-        [{ accountName }]
-      );
+    sut = proxyquire('commands/deployments/CreateAutoScalingGroup.js', {
+      'modules/resourceFactories/AsgResource': autoScalingClientMock
     });
   });
 
   it('should post template values to the ASG client', () => {
-    return sut(command).then(result => {
+    return sut(command).then((result) => {
       autoScalingClientMock.post.called.should.be.true();
-      autoScalingClientMock.post.getCall(0).args[0].should.match({
+      autoScalingClientMock.post.getCall(0).args[0].should.eql({
         AutoScalingGroupName: template.autoScalingGroupName,
+        environmentName: 'my-env',
         LaunchConfigurationName: template.launchConfigurationName,
         MaxSize: template.size.max,
         MinSize: template.size.min,
         VPCZoneIdentifier: `${template.subnets[0]},${template.subnets[1]}`,
         DesiredCapacity: template.size.desired,
         Tags: [
-          { Key: 'EnvironmentName', Value:EnvironmentName },
-          { Key: 'Schedule', Value: '' },
-        ],
+          { Key: 'EnvironmentName', Value: EnvironmentName },
+          { Key: 'Schedule', Value: '' }
+        ]
       });
     });
   });

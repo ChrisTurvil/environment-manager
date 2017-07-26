@@ -14,19 +14,16 @@ function mkreq(params) {
 }
 
 function assertItCallsErrorCallbackWhenEnvironmentNotFound(req, handlerFunctionName) {
-  context('when the environment search returns a rejected promise', function () {
-    let environment = {
-      getAccountNameForEnvironment: sinon.spy(() => Promise.reject(new Error('BOOM!')))
-    };
+  context('when the requested environment does not exist', function () {
     let sut = proxyquire('api/controllers/asgs/asgController', {
-      'models/Environment': environment
+      'modules/validate/rule/environmentExists': () => Promise.resolve({ error: 'invalid' })
     });
-    it('it calls the Express error callback', function () {
-      let res = null;
-      let next = sinon.spy(error => error);
-      return sut[handlerFunctionName](req, res, next)
-        .catch(() => undefined)
-        .then(() => sinon.assert.called(next));
+    it('it sends a response with a 400 status code', function () {
+      let res = {
+        status: sinon.stub().returns({ json: sinon.stub() })
+      };
+      return sut[handlerFunctionName](req, res)
+        .then(() => sinon.assert.calledWith(res.status, '400'));
     });
   });
 }

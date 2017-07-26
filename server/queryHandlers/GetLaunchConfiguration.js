@@ -6,7 +6,7 @@ let co = require('co');
 let AsgResource = require('modules/resourceFactories/AsgResource');
 let instanceDevicesProvider = require('modules/provisioning/launchConfiguration/instanceDevicesProvider');
 let Image = require('models/Image');
-let SecurityGroup = require('models/SecurityGroup');
+let scanSecurityGroups = require('queryHandlers/ScanSecurityGroups');
 let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 
 let _ = require('lodash');
@@ -24,7 +24,7 @@ module.exports = function GetLaunchConfiguration({ autoScalingGroupName, environ
     let vpcId = environmentType.VpcId;
 
     let { accountId, region } = yield getPartitionForEnvironment(environmentName);
-    let securityGroups = yield SecurityGroup.getAllByIds(accountId, region, vpcId, awsLaunchConfig.SecurityGroups);
+    let securityGroups = yield scanSecurityGroups({ accountId, groupIds: awsLaunchConfig.SecurityGroups, region, vpcId });
     let securityGroupsNames = _.map(securityGroups, group => group.getTag('Name'));
 
     let ret = {

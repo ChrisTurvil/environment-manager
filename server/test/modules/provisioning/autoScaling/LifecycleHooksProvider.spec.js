@@ -1,102 +1,80 @@
-/* TODO: enable linting and fix resulting errors */
-/* eslint-disable */
 /* Copyright (c) Trainline Limited, 2016-2017. All rights reserved. See LICENSE.txt in the project root for license information. */
+
 'use strict';
 
-let should = require("should");
-let sinon = require("sinon");
-let proxyquire = require('proxyquire');
+let should = require('should');
+let sinon = require('sinon');
+let proxyquire = require('proxyquire').noCallThru();
 
-let LifecycleHookType = require("Enums").LifecycleHookType;
-let LifecycleHookDefaultResult = require("Enums").LifecycleHookDefaultResult;
+let LifecycleHookType = require('Enums').LifecycleHookType;
+let LifecycleHookDefaultResult = require('Enums').LifecycleHookDefaultResult;
 
-describe("LifecycleHooksProvider: ", () => {
+describe('LifecycleHooksProvider: ', () => {
+  let accountName = 'Prod';
 
-  var accountName = "Prod";
-
-  var expectedIAMRole = {
-    RoleName: "roleInfraAsgScale",
-    Arn: "arn:aws:iam::000000000001:role/roleInfraAsgScale"
+  let expectedIAMRole = {
+    RoleName: 'roleInfraAsgScale',
+    Arn: 'arn:aws:iam::000000000001:role/roleInfraAsgScale'
   };
 
-  var expectedTopic = {
-    TopicArn: "arn:aws:sns:eu-west-1:000000000001:InfraAsgLambdaScale"
+  let expectedTopic = {
+    TopicArn: 'arn:aws:sns:eu-west-1:000000000001:InfraAsgLambdaScale'
   };
 
-  var senderMock = {
-    sendQuery: sinon.stub()
-  };
-
+  let GetRole = sinon.stub();
+  let GetTopic = sinon.stub();
   const lifecycleHooksProvider = proxyquire(
     'modules/provisioning/autoScaling/lifecycleHooksProvider',
-    {'modules/sender': senderMock}
+    {
+      'queryHandlers/GetRole': GetRole,
+      'queryHandlers/GetTopic': GetTopic
+    }
   );
 
-  senderMock.sendQuery.withArgs(sinon.match({ query: { name: "GetRole" } }))
-    .returns(Promise.resolve(expectedIAMRole));
+  GetRole.returns(Promise.resolve(expectedIAMRole));
 
-  senderMock.sendQuery.withArgs(sinon.match({ query: { name: "GetTopic" } }))
-    .returns(Promise.resolve(expectedTopic));
+  GetTopic.returns(Promise.resolve(expectedTopic));
 
-  var promise;
+  let promise;
 
   before(() => {
-    var target = lifecycleHooksProvider;
+    let target = lifecycleHooksProvider;
     promise = target.get(accountName);
   });
 
-  it("should be possible to obtain a lifecycle hook", () => {
-
-    return promise.then(lifecycleHooks => {
-
+  it('should be possible to obtain a lifecycle hook', () => {
+    return promise.then((lifecycleHooks) => {
       should(lifecycleHooks).not.be.undefined();
       should(lifecycleHooks).be.Array();
 
       lifecycleHooks[0].should.match({
-        name: "10min-draining",
+        name: '10min-draining',
         type: LifecycleHookType.InstanceTerminating,
         roleArn: expectedIAMRole.Arn,
         topicArn: expectedTopic.TopicArn,
         defaultResult: LifecycleHookDefaultResult.Continue,
-        heartbeatTimeout: "10m"
+        heartbeatTimeout: '10m'
       });
-
     });
+  });
 
-  });  
-
-  it("should be possible to obtain the roleInfraAsgScale Role Arn", () =>
-
-    promise.then(() => {
-
-      senderMock.sendQuery.called.should.be.true();
-      senderMock.sendQuery.getCall(0).args[0].should.match({
-        query: {
-          name: "GetRole",
-          accountName: accountName,
-          roleName: "roleInfraAsgScale"
+  it('should be possible to obtain the roleInfraAsgScale Role Arn', () =>
+    promise.then(() =>
+      sinon.assert.calledWith(
+        GetRole,
+        {
+          accountName,
+          roleName: 'roleInfraAsgScale'
         }
-      });
+      )));
 
-    })
-
-  );
-
-  it("should be possible to obtain the InfraAsgLambdaScale Topic Arn", () =>
-
-    promise.then(() => {
-
-      senderMock.sendQuery.called.should.be.true();
-      senderMock.sendQuery.getCall(1).args[0].should.match({
-        query: {
-          name: "GetTopic",
-          accountName: accountName,
-          topicName: "InfraAsgLambdaScale"
+  it('should be possible to obtain the InfraAsgLambdaScale Topic Arn', () =>
+    promise.then(() =>
+      sinon.assert.calledWith(
+        GetTopic,
+        {
+          accountName,
+          topicName: 'InfraAsgLambdaScale'
         }
-      });
-
-    })
-
-  );
-
+      )));
 });

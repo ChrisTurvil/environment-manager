@@ -23,6 +23,12 @@ describe('Describing [AsgResource]', () => {
           del: () => Promise.resolve(undefined)
         })
       },
+      'modules/amazon-client/awsPartitions': {
+        getPartitionForEnvironment: () => Promise.resolve({
+          accountId: 'my-account',
+          region: 'my-region'
+        })
+      },
       'modules/amazon-client/childAccountClient': {
         createASGClient: () => Promise.resolve(asgClient),
       }
@@ -47,7 +53,7 @@ describe('Describing [AsgResource]', () => {
         instanceIds: ['instance-one'],
       };
 
-      var target = new AsgResource('123456789012');
+      var target = AsgResource;
 
       promise = target.enterInstancesToStandby(parameters);
 
@@ -88,7 +94,7 @@ describe('Describing [AsgResource]', () => {
         instanceIds: ['instance-one'],
       };
 
-      var target = new AsgResource(asgClient);
+      var target = AsgResource;
 
       promise = target.exitInstancesFromStandby(parameters);
 

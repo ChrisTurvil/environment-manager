@@ -4,8 +4,7 @@
 
 let sinon = require('sinon');
 let sinonHelper = require('test/utils/sinonHelper');
-let proxyquire = require('proxyquire');
-let assert = require('assert');
+let proxyquire = require('proxyquire').noCallThru();
 
 let AutoScalingGroupAlreadyExistsError = require('modules/errors/AutoScalingGroupAlreadyExistsError.class');
 let Deployment = require('models/Deployment');
@@ -13,6 +12,8 @@ let Deployment = require('models/Deployment');
 let ENVIRONMENT_NAME = 'pr1';
 let SERVICE_NAME = 'MyService';
 let ACCOUNT_NAME = 'Prod';
+const ACCOUNT_ID = '123456789012';
+const REGION = 'eu-east-7';
 
 let deployment = new Deployment({
   id: '00000000-0000-0000-0000-000000000001',
@@ -53,17 +54,28 @@ describe('GetInfrastructureRequirements:', () => {
       autoScalingTemplatesProvider: {
         get: sinon.stub().returns(Promise.resolve())
       },
-      sender: {
-        sendQuery: sinon.stub().returns(Promise.resolve([])),
-        sendCommand: sinon.stub().returns(Promise.resolve([]))
-      }
+      AsgResource: {
+        get: sinon.stub().returns(Promise.resolve())
+      },
+      ScanAutoScalingGroups: sinon.stub().returns(Promise.resolve([])),
+      ScanLaunchConfigurations: sinon.stub().returns(Promise.resolve([])),
+      awsPartitions: {
+        getPartitionForEnvironment: sinon.stub().returns(Promise.resolve({
+          accountId: ACCOUNT_ID,
+          region: 'eu-east-7'
+        }))
+      },
+      CreateAutoScalingGroup: sinon.stub().returns(Promise.resolve())
     };
 
     let mod = proxyquire('commands/deployments/GetInfrastructureRequirements', {
+      'modules/amazon-client/awsPartitions': mocks.awsPartitions,
       'modules/provisioning/autoScalingTemplatesProvider': mocks.autoScalingTemplatesProvider,
-      'modules/sender': mocks.sender,
       'modules/provisioning/infrastructureConfigurationProvider': mocks.infrastructureConfigurationProvider,
-      'modules/provisioning/launchConfigurationTemplatesProvider': mocks.launchConfigurationTemplatesProvider
+      'modules/provisioning/launchConfigurationTemplatesProvider': mocks.launchConfigurationTemplatesProvider,
+      'modules/resourceFactories/AsgResource': mocks.AsgResource,
+      'queryHandlers/ScanAutoScalingGroups': mocks.ScanAutoScalingGroups,
+      'queryHandlers/ScanLaunchConfigurations': mocks.ScanLaunchConfigurations
     });
     return mod;
   }
@@ -93,9 +105,8 @@ describe('GetInfrastructureRequirements:', () => {
 
     it('should only query the target ASG', () =>
       promise.then(() => {
-        let scanASGsQuery = mocks.sender.sendQuery.getCalls()[0].args[0].query;
-        assert.equal(scanASGsQuery.autoScalingGroupNames.length, 1);
-        assert.equal(scanASGsQuery.autoScalingGroupNames[0], BLUE_ASG);
+        sinon.assert.calledOnce(mocks.ScanAutoScalingGroups);
+        sinon.assert.calledWithExactly(mocks.ScanAutoScalingGroups, { accountId: ACCOUNT_ID, autoScalingGroupNames: [BLUE_ASG] });
       })
     );
   });
@@ -135,12 +146,7 @@ describe('GetInfrastructureRequirements:', () => {
           AutoScalingGroupName: 'pr1-ta-Web'
         };
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([expectedAutoScalingGroup]));
-
-        mocks.sender.sendCommand
-          .returns(Promise.resolve());
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([expectedAutoScalingGroup]));
 
         promise = target(COMMAND);
       });
@@ -150,42 +156,23 @@ describe('GetInfrastructureRequirements:', () => {
       });
 
       it('should get configuration for environment and service', () => {
-        mocks.infrastructureConfigurationProvider.get
-          .called.should.be.true();
-
-        mocks.infrastructureConfigurationProvider.get
-          .getCall(0).args.should.match([ENVIRONMENT_NAME, SERVICE_NAME]);
+        sinon.assert.calledWith(mocks.infrastructureConfigurationProvider.get, ENVIRONMENT_NAME, SERVICE_NAME);
       });
 
       it('should get AutoScaling templates for configuration', () => {
-        mocks.autoScalingTemplatesProvider.get
-          .called.should.be.true();
-
-        mocks.autoScalingTemplatesProvider.get
-          .getCall(0).args.should.match([expectedConfiguration, ACCOUNT_NAME]);
+        sinon.assert.calledWith(mocks.autoScalingTemplatesProvider.get, expectedConfiguration, ACCOUNT_ID);
       });
 
       it('should not get LaunchConfiguration templates', () => {
-        mocks.launchConfigurationTemplatesProvider.get
-          .called.should.be.false();
+        sinon.assert.notCalled(mocks.launchConfigurationTemplatesProvider.get);
       });
 
       it('should check the AutoScalingGroup presence', () => {
-        let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-        calls.map(call => call.args[0]).should.matchAny({
-          query: {
-            name: 'ScanAutoScalingGroups',
-            accountName: ACCOUNT_NAME,
-            autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName]
-          }
-        });
+        sinon.assert.calledWith(mocks.ScanAutoScalingGroups, { accountId: ACCOUNT_ID, autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName] });
       });
 
       it('should not check the LaunchConfiguration presence', () => {
-        let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-        calls.map(call => call.args[0]).should.not.matchAny({
-          query: { name: 'ScanLaunchConfigurations' }
-        });
+        sinon.assert.notCalled(mocks.ScanLaunchConfigurations);
       });
     });
 
@@ -211,57 +198,32 @@ describe('GetInfrastructureRequirements:', () => {
         mocks.launchConfigurationTemplatesProvider.get
           .returns(Promise.resolve([expectedLaunchConfigurationTemplate]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([]));
-
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanLaunchConfigurations' } }))
-          .returns(Promise.resolve([]));
-
-        mocks.sender.sendCommand.returns(Promise.resolve());
         promise = target(COMMAND);
       });
 
       it('should get AutoScaling templates for configuration', () =>
         promise.then(() => {
-          mocks.autoScalingTemplatesProvider.get.called.should.be.true();
-          mocks.autoScalingTemplatesProvider.get.getCall(0).args
-            .should.match([expectedConfiguration, ACCOUNT_NAME]);
+          sinon.assert.calledWith(mocks.autoScalingTemplatesProvider.get, expectedConfiguration, ACCOUNT_ID);
         })
       );
 
       it('should check the AutoScalingGroup presence', () =>
         promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanAutoScalingGroups',
-              accountName: ACCOUNT_NAME,
-              autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName]
-            }
-          });
-        })
-      );
+          sinon.assert.calledWith(mocks.ScanAutoScalingGroups, { accountId: ACCOUNT_ID, autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName] });
+        }));
 
       it('should check the LaunchConfiguration presence', () =>
         promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanLaunchConfigurations',
-              accountName: ACCOUNT_NAME,
-              launchConfigurationNames: [expectedAutoScalingTemplate.launchConfigurationName]
-            }
-          });
-        })
-      );
+          sinon.assert.alwaysCalledWith(mocks.ScanLaunchConfigurations, { accountName: ACCOUNT_ID, launchConfigurationNames: [expectedAutoScalingTemplate.launchConfigurationName] });
+        }));
 
       it('should get LaunchConfiguration templates for configuration', () =>
         promise.then(() => {
-          mocks.launchConfigurationTemplatesProvider.get.called.should.be.true();
-          mocks.launchConfigurationTemplatesProvider.get.getCall(0).args
-            .should.match([expectedConfiguration, ACCOUNT_NAME]);
+          sinon.assert.calledWith(
+            mocks.launchConfigurationTemplatesProvider.get,
+            expectedConfiguration,
+            ACCOUNT_ID
+          );
         })
       );
     });
@@ -302,58 +264,38 @@ describe('GetInfrastructureRequirements:', () => {
           LaunchConfigurationName: 'LaunchConfig_pr1-ta-Web'
         };
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([]));
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanLaunchConfigurations' } }))
-          .returns(Promise.resolve([expectedLaunchConfiguration]));
+        mocks.ScanLaunchConfigurations.returns(Promise.resolve([expectedLaunchConfiguration]));
 
-        mocks.sender.sendCommand.returns(Promise.resolve());
         promise = target(COMMAND);
       });
 
       it('should get AutoScaling templates for configuration', () =>
-        promise.then(() => {
-          mocks.autoScalingTemplatesProvider.get.called.should.be.true();
-
-          mocks.autoScalingTemplatesProvider.get.getCall(0).args
-            .should.match([expectedConfiguration, ACCOUNT_NAME]);
-        })
+        promise.then(() =>
+          sinon.assert.calledWith(
+            mocks.autoScalingTemplatesProvider.get,
+            expectedConfiguration,
+            ACCOUNT_ID
+          )
+        )
       );
 
       it('should check the AutoScalingGroup presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanAutoScalingGroups',
-              accountName: ACCOUNT_NAME,
-              autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName]
-            }
-          });
-        })
-      );
+        promise.then(() =>
+          sinon.assert.calledWith(
+            mocks.ScanAutoScalingGroups,
+            { accountId: ACCOUNT_ID, autoScalingGroupNames: [expectedAutoScalingTemplate.autoScalingGroupName] })));
 
       it('should check the LaunchConfiguration presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanLaunchConfigurations',
-              accountName: ACCOUNT_NAME,
-              launchConfigurationNames: [expectedAutoScalingTemplate.launchConfigurationName]
-            }
-          });
-        })
-      );
+        promise.then(() =>
+          sinon.assert.calledWith(
+            mocks.ScanLaunchConfigurations,
+            { accountName: ACCOUNT_ID, launchConfigurationNames: [expectedAutoScalingTemplate.launchConfigurationName] })));
 
       it('should not get LaunchConfiguration templates', () =>
         promise.then(() =>
-          mocks.launchConfigurationTemplatesProvider.get.called.should.be.false()
-        )
-      );
+          sinon.assert.notCalled(mocks.launchConfigurationTemplatesProvider.get)));
     });
 
     describe('and AutoScalingGroup and its LaunchConfiguration do not exist but an AutoScalingGroupAlreadyExistsError has thrown', () => {
@@ -379,17 +321,10 @@ describe('GetInfrastructureRequirements:', () => {
         mocks.launchConfigurationTemplatesProvider.get
           .returns(Promise.resolve([expectedLaunchConfigurationTemplate]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([]));
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanLaunchConfigurations' } }))
-          .returns(Promise.resolve([]));
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([]));
+        mocks.ScanLaunchConfigurations.returns(Promise.resolve([]));
 
-        mocks.sender.sendCommand.returns(Promise.resolve());
-        mocks.sender.sendCommand
-          .withArgs(sinon.match({ command: { name: 'CreateAutoScalingGroup' } }))
-          .returns(Promise.reject(new AutoScalingGroupAlreadyExistsError()));
+        mocks.CreateAutoScalingGroup.returns(Promise.reject(new AutoScalingGroupAlreadyExistsError()));
 
         promise = target(COMMAND);
       });
@@ -445,41 +380,29 @@ describe('GetInfrastructureRequirements:', () => {
           AutoScalingGroupName: 'pr1-ta-Web-green'
         };
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([
-            expectedAutoScalingGroupBlue,
-            expectedAutoScalingGroupGreen
-          ]));
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([
+          expectedAutoScalingGroupBlue,
+          expectedAutoScalingGroupGreen
+        ]));
 
-        mocks.sender.sendCommand.returns(Promise.resolve());
         promise = target(COMMAND);
       });
 
       it('should check the AutoScalingGroup presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanAutoScalingGroups',
-              accountName: ACCOUNT_NAME,
+        promise.then(() =>
+          sinon.assert.alwaysCalledWith(
+            mocks.ScanAutoScalingGroups,
+            {
+              accountId: ACCOUNT_ID,
               autoScalingGroupNames: [
                 expectedAutoScalingBlueTemplate.autoScalingGroupName,
                 expectedAutoScalingGreenTemplate.autoScalingGroupName
               ]
-            }
-          });
-        })
-      );
+            })));
 
       it('should not check the LaunchConfiguration presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.not.matchAny({
-            query: { name: 'ScanLaunchConfigurations' }
-          });
-        })
-      );
+        promise.then(() =>
+          sinon.assert.notCalled(mocks.ScanLaunchConfigurations)));
     });
 
     describe('and only blue AutoScalingGroup and blue LaunchConfiguration exist on AWS', () => {
@@ -532,46 +455,33 @@ describe('GetInfrastructureRequirements:', () => {
           image: { rootVolumeSize: 10 }, devices: [{ DeviceName: '/dev/sda1', Ebs: { VolumeSize: 20 } }], launchConfigurationName: 'LaunchConfig_pr1-ta-Web-blue'
         };
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([expectedAutoScalingGroupBlue]));
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([expectedAutoScalingGroupBlue]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanLaunchConfigurations' } }))
-          .returns(Promise.resolve([expectedLaunchConfigurationBlue]));
+        mocks.ScanLaunchConfigurations.returns(Promise.resolve([expectedLaunchConfigurationBlue]));
 
-        mocks.sender.sendCommand.returns(Promise.resolve());
         promise = target(COMMAND);
       });
 
       it('should check the AutoScalingGroups presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanAutoScalingGroups',
-              accountName: ACCOUNT_NAME,
+        promise.then(() =>
+          sinon.assert.alwaysCalledWith(
+            mocks.ScanAutoScalingGroups,
+            {
+              accountId: ACCOUNT_ID,
               autoScalingGroupNames: [
                 expectedAutoScalingBlueTemplate.autoScalingGroupName,
                 expectedAutoScalingGreenTemplate.autoScalingGroupName
               ]
-            }
-          });
-        })
-      );
+            })));
 
       it('should check green LaunchConfiguration presence only', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanLaunchConfigurations',
-              accountName: ACCOUNT_NAME,
+        promise.then(() =>
+          sinon.assert.alwaysCalledWith(
+            mocks.ScanLaunchConfigurations,
+            {
+              accountName: ACCOUNT_ID,
               launchConfigurationNames: [expectedAutoScalingGreenTemplate.launchConfigurationName]
-            }
-          });
-        })
-      );
+            })));
     });
 
     describe('and both AutoScalingGroups do not exist on AWS', () => {
@@ -619,49 +529,36 @@ describe('GetInfrastructureRequirements:', () => {
             expectedLaunchConfigurationGreenTemplate
           ]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanAutoScalingGroups' } }))
-          .returns(Promise.resolve([]));
+        mocks.ScanAutoScalingGroups.returns(Promise.resolve([]));
 
-        mocks.sender.sendQuery
-          .withArgs(sinon.match({ query: { name: 'ScanLaunchConfigurations' } }))
-          .returns(Promise.resolve([]));
+        mocks.ScanLaunchConfigurations.returns(Promise.resolve([]));
 
-        mocks.sender.sendCommand.returns(Promise.resolve());
         promise = target(COMMAND);
       });
 
       it('should check the AutoScalingGroup presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanAutoScalingGroups',
-              accountName: ACCOUNT_NAME,
+        promise.then(() =>
+          sinon.assert.alwaysCalledWith(
+            mocks.ScanAutoScalingGroups,
+            {
+              accountId: ACCOUNT_ID,
               autoScalingGroupNames: [
                 expectedAutoScalingBlueTemplate.autoScalingGroupName,
                 expectedAutoScalingGreenTemplate.autoScalingGroupName
               ]
-            }
-          });
-        })
-      );
+            })));
 
       it('should check the LaunchConfiguration presence', () =>
-        promise.then(() => {
-          let calls = sinonHelper.getCalls(mocks.sender.sendQuery);
-          calls.map(call => call.args[0]).should.matchAny({
-            query: {
-              name: 'ScanLaunchConfigurations',
-              accountName: ACCOUNT_NAME,
+        promise.then(() =>
+          sinon.assert.alwaysCalledWith(
+            mocks.ScanLaunchConfigurations,
+            {
+              accountName: ACCOUNT_ID,
               launchConfigurationNames: [
                 expectedAutoScalingBlueTemplate.launchConfigurationName,
                 expectedAutoScalingGreenTemplate.launchConfigurationName
               ]
-            }
-          });
-        })
-      );
+            })));
     });
   });
 });

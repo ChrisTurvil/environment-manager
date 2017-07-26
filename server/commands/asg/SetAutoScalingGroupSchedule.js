@@ -13,9 +13,9 @@ let InvalidOperationError = require('modules/errors/InvalidOperationError.class'
 let ec2InstanceClientFactory = require('modules/clientFactories/ec2InstanceClientFactory');
 
 module.exports = function SetAutoScalingGroupScheduleCommandHandler({ autoScalingGroupName, environmentName, propagateToInstances, schedule: newSchedule }) {
-  assert(autoScalingGroupName !== undefined);
-  assert(environmentName !== undefined);
-  assert(newSchedule !== undefined);
+  assert(autoScalingGroupName !== undefined, 'autoScalingGroupName is required');
+  assert(environmentName !== undefined, 'environmentName is required');
+  assert(newSchedule !== undefined, 'newSchedule is required');
 
   return co(function* () {
     let scalingSchedule;
@@ -28,7 +28,7 @@ module.exports = function SetAutoScalingGroupScheduleCommandHandler({ autoScalin
       schedule = newSchedule;
     }
 
-    if (!SCHEDULE_PATTERN.exec(schedule)) {
+    if (!SCHEDULE_PATTERN.test(newSchedule)) {
       return Promise.reject(new InvalidOperationError(
         `Provided schedule is invalid. Current value: "${schedule}".`
       ));

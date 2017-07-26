@@ -18,7 +18,7 @@ module.exports = function CreateAutoScalingGroupCommandHandler(command) {
 
   assert(command, 'Expected "command" argument not to be null.');
   assert(template, 'Expected "command" argument to contain "template" property not null.');
-  assert(environmentName, 'Expected "command" argument to contain "accountName" property not null or empty.');
+  assert(environmentName, 'Expected "command" argument to contain "environmentName" property not null or empty.');
 
   return co(function* () {
     let autoScalingGroupName = template.autoScalingGroupName;

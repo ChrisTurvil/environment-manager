@@ -6,7 +6,7 @@ let _ = require('lodash');
 let co = require('co');
 let EnvironmentType = require('models/EnvironmentType');
 let TaggableMixin = require('./TaggableMixin');
-let launchConfigurationResourceFactory = require('modules/resourceFactories/launchConfigurationResourceFactory');
+let launchConfigurationClient = require('modules/resourceFactories/launchConfigurationResourceFactory');
 
 class AutoScalingGroup {
 
@@ -21,8 +21,7 @@ class AutoScalingGroup {
       if (name === undefined) {
         throw new Error(`Launch configuration doesn't exist for ${self.AutoScalingGroupName}`);
       }
-      let client = launchConfigurationResourceFactory.create(null, { accountName: self.$accountName });
-      return client.get({ name });
+      return launchConfigurationClient.get({ environmentName: self.getTag('Environment'), name });
     });
   }
 

@@ -2,7 +2,9 @@
 
 'use strict';
 
+let assert = require('assert');
 let _ = require('lodash');
+let fp = require('lodash/fp');
 let amazonClientFactory = require('modules/amazon-client/childAccountClient');
 let { getPartitionForEnvironment } = require('modules/amazon-client/awsPartitions');
 let AwsError = require('modules/errors/AwsError.class');
@@ -86,17 +88,22 @@ class LaunchConfigurationResource {
   }
 }
 
-module.exports = {
-
-  canCreate: resourceDescriptor =>
-    resourceDescriptor.type.toLowerCase() === 'launchconfig',
-
-  create: (resourceDescriptor, parameters) =>
-    amazonClientFactory.createASGClient(parameters.accountName)
-      .then(client => new LaunchConfigurationResource(client)),
-
-  createLaunchConfigurationResource: ({ environmentName }) =>
-    getPartitionForEnvironment(environmentName)
+function invokeInEnvironment(fn) {
+  const environmentNameParam = 'environmentName';
+  return (parameters) => {
+    let { [environmentNameParam]: environmentName } = parameters;
+    assert(environmentName, `${environmentNameParam} is required`);
+    let params = fp.omit(environmentNameParam)(parameters);
+    return getPartitionForEnvironment(environmentName)
       .then(({ accountId, region }) => amazonClientFactory.createASGClient(accountId, region))
       .then(client => new LaunchConfigurationResource(client))
+      .then(obj => fn(obj).call(obj, params));
+  };
+}
+
+module.exports = {
+  all: invokeInEnvironment(obj => obj.all),
+  delete: invokeInEnvironment(obj => obj.delete),
+  get: invokeInEnvironment(obj => obj.get),
+  post: invokeInEnvironment(obj => obj.post)
 };

@@ -3,7 +3,7 @@
 'use strict';
 
 let assert = require('assert');
-let SecurityGroup = require('models/SecurityGroup');
+let scanSecurityGroups = require('queryHandlers/ScanSecurityGroups');
 let _ = require('lodash');
 
 /**
@@ -21,7 +21,7 @@ module.exports = {
       securityGroupNamesAndReasonsMapping[group.name] = group.reason;
     });
 
-    return SecurityGroup.getAllByNames(accountId, region, vpcId, securityGroupNames)
+    return scanSecurityGroups({ accountId, region, vpcId, groupNames: securityGroupNames })
       .then(securityGroups =>
         getAndVerifyAllExpectedSecurityGroups(securityGroups, vpcId, securityGroupNamesAndReasonsMapping, logger)
       );
@@ -31,7 +31,7 @@ module.exports = {
     assert(configuration, 'Expected "configuration" argument not to be null');
     assert(image, 'Expected "image" argument not to be null');
     assert(accountId, 'Expected "accountId" argument not to be null');
-    assert(region, 'Expected "accountId" argument not to be null');
+    assert(region, 'Expected "region" argument not to be null');
 
     let vpcId = configuration.environmentType.VpcId;
     let securityGroupNamesAndReasons = getSecurityGroupsNamesAndReasons(configuration, image);
@@ -74,7 +74,7 @@ function getSecurityGroupsNamesAndReasons(configuration, image) {
     securityGroupNamesAndReasons.push({
       name: getSecurityGroupNameByServerRole(cluster, serverRoleName),
       reason: 'It is assigned by default given server role and cluster. It can be overwritten ' +
-              'by specifying one or more security groups in the server role configuration.'
+      'by specifying one or more security groups in the server role configuration.'
     });
   }
 
@@ -87,7 +87,7 @@ function getSecurityGroupsNamesAndReasons(configuration, image) {
     securityGroupNamesAndReasons.push({
       name: getSecurityGroupNameByPlatformSecure(image, securityZone),
       reason: `It is assigned by default because instances image is ${imagePlatform} based in ` +
-              'Secure security zone.'
+      'Secure security zone.'
     });
   } else {
     securityGroupNamesAndReasons.push({

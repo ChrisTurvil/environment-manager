@@ -3,7 +3,7 @@
 'use strict';
 
 let co = require('co');
-let { createLaunchConfigurationResource } = require('modules/resourceFactories/launchConfigurationResourceFactory');
+let launchConfigurationResourceFactory = require('modules/resourceFactories/launchConfigurationResourceFactory');
 let AsgResource = require('modules/resourceFactories/AsgResource');
 
 module.exports = {
@@ -15,8 +15,6 @@ module.exports = {
       //
       let autoScalingGroupName = autoScalingGroup.$autoScalingGroupName;
 
-      let launchConfigurationClient = yield createLaunchConfigurationResource({ environmentName });
-
       // Send a request to obtain the LaunchConfiguration for the specific
       // AutoScalingGroup
       // [AutoScalingGroup] <---> [LaunchConfiguration]
@@ -27,10 +25,10 @@ module.exports = {
       // [AutoScalingGroup] <---> [LaunchConfiguration]
       //                          [LaunchConfiguration_Backup] (creating ...)
 
-      let backupLaunchConfiguration = Object.assign({}, originalLaunchConfiguration);
+      let backupLaunchConfiguration = Object.assign({ environmentName }, originalLaunchConfiguration);
       backupLaunchConfiguration.LaunchConfigurationName += '_Backup';
 
-      yield launchConfigurationClient.post(backupLaunchConfiguration);
+      yield launchConfigurationResourceFactory.post(backupLaunchConfiguration);
 
       // Attach the backup LaunchConfiguration just created to the target AutoScalingGroup
       //                          [LaunchConfiguration]
@@ -45,17 +43,17 @@ module.exports = {
       //                          [LaunchConfiguration] (deleting...)
       // [AutoScalingGroup] <---> [LaunchConfiguration_Backup]
 
-      yield launchConfigurationClient.delete({ name: originalLaunchConfiguration.LaunchConfigurationName });
+      yield launchConfigurationResourceFactory.delete({ environmentName, name: originalLaunchConfiguration.LaunchConfigurationName });
 
       // Create a new LaunchConfiguration starting from the original applying an
       // updateAction function on it.
       //                          [LaunchConfiguration] (creating ...)
       // [AutoScalingGroup] <---> [LaunchConfiguration_Backup]
 
-      let updatedLaunchConfiguration = Object.assign({}, originalLaunchConfiguration);
+      let updatedLaunchConfiguration = Object.assign({ environmentName }, originalLaunchConfiguration);
       updateAction(updatedLaunchConfiguration);
 
-      yield launchConfigurationClient.post(updatedLaunchConfiguration);
+      yield launchConfigurationResourceFactory.post(updatedLaunchConfiguration);
 
       // Attach new LaunchConfiguration to the target AutoScalingGroup.
       // NOTE: this LaunchConfiguration is equal to the original one but updated.
@@ -69,7 +67,7 @@ module.exports = {
       // Delete the backup LaunchConfiguration as no longer needed.
       // [AutoScalingGroup] <---> [LaunchConfiguration]
       //                          [LaunchConfiguration_Backup] (deleting...)
-      yield launchConfigurationClient.delete({ name: backupLaunchConfiguration.LaunchConfigurationName });
+      yield launchConfigurationResourceFactory.delete({ environmentName, name: backupLaunchConfiguration.LaunchConfigurationName });
     });
   }
 };

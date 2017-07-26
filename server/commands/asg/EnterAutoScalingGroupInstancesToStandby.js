@@ -46,13 +46,11 @@ module.exports = function EnterAutoScalingGroupInstancesToStandbyCommandHandler(
   });
 };
 
-function setAutoScalingGroupSize(size, { autoScalingGroupName, environmentName }) {
-  let command = {
-    environmentName,
-    autoScalingGroupName,
-    autoScalingGroupMinSize: size.min,
-    autoScalingGroupMaxSize: size.max
-  };
+function setAutoScalingGroupSize({ max, min }, { autoScalingGroupName, environmentName }) {
+  let command = Object.assign(
+    { environmentName, autoScalingGroupName },
+    (max ? { autoScalingGroupMaxSize: max } : {}),
+    (min ? { autoScalingGroupMinSize: min } : {}));
 
   return SetAutoScalingGroupSize(command);
 }
