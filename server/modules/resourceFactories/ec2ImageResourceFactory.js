@@ -2,15 +2,16 @@
 
 'use strict';
 
+let assert = require('assert');
+let Promise = require('bluebird');
 let _ = require('lodash');
-let amazonClientFactory = require('modules/amazon-client/childAccountClient');
+let { createEC2Client } = require('modules/amazon-client/childAccountClient');
 let awsAccounts = require('modules/awsAccounts');
 let cacheManager = require('modules/cacheManager');
-let fp = require('lodash/fp');
 
 const USE_CACHE = true;
 
-function getImagesVisibleToAccount(accountId, filter) {
+function getImagesVisibleToAccount(accountId, region, filter) {
   function getImagesOwners() {
     return awsAccounts.getAMIsharingAccounts()
       .then(accounts => _.uniq(accounts.concat(accountId))
@@ -31,41 +32,28 @@ function getImagesVisibleToAccount(accountId, filter) {
     return getImagesOwners().then(Owners => ({ Filters, Owners }));
   }
 
-  let ec2ClientPromise = amazonClientFactory.createEC2Client(accountId);
-
-  return Promise.all([ec2ClientPromise, buildRequest(filter)])
-    .then(([client, request]) => client.describeImages(request).promise())
+  return Promise.join(
+    createEC2Client(accountId, region),
+    buildRequest(filter),
+    (client, request) => client.describeImages(request).promise())
     .then(data => data.Images);
 }
 
 const imagesCache = cacheManager.create('ImagesCache', getImagesVisibleToAccount, { stdTTL: 30 * 60 });
 
-function ImageResource(account) {
-  let accountId = _.toString(account.AccountNumber);
+function ImageResource() {
+  this.all = function cachedGetAll({ accountId, region, filter = {} }) {
+    assert(accountId !== undefined, 'accountId is required');
+    assert(region !== undefined, 'region is required');
 
-  function cachedGetAll(params) {
-    let hasFilter = fp.flow(fp.get('filter'), fp.toPairs, x => x.length > 0);
+    let hasFilter = Object.keys(filter).length > 0;
 
-    if (hasFilter(params) || !USE_CACHE) {
-      return getImagesVisibleToAccount(accountId, params.filter);
+    if (hasFilter || !USE_CACHE) {
+      return getImagesVisibleToAccount(accountId, region, filter);
     } else {
       return imagesCache.get(accountId);
     }
-  }
-
-  this.all = cachedGetAll;
+  };
 }
 
-function create(resourceDescriptor, parameters) {
-  return awsAccounts.getByName(parameters.accountName)
-  .then(account => new ImageResource(account));
-}
-
-function canCreate(resourceDescriptor) {
-  return resourceDescriptor.type.toLowerCase() === 'ec2/image';
-}
-
-module.exports = {
-  canCreate,
-  create
-};
+module.exports = new ImageResource();

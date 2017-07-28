@@ -2,23 +2,23 @@
 
 'use strict';
 
-let co = require('co');
-let resourceProvider = require('modules/resourceProvider');
+let Promise = require('bluebird');
+let fp = require('lodash/fp');
+let ec2ImageResourceFactory = require('modules/resourceFactories/ec2ImageResourceFactory');
 let imageSummary = require('modules/machineImage/imageSummary');
 let assert = require('assert');
+let { getPartitionsInAccount } = require('modules/amazon-client/awsPartitions');
 
 /**
  * Get all the EC2 images ordered by AMI Type (lexicographical, ascending) then by
  * AMI version (semver, descending).
  */
-function* handler(query) {
-  assert(query.accountName);
-  let parameters = { accountName: query.accountName };
-  let resource = yield resourceProvider.getInstanceByName('images', parameters);
-
-  let images = yield resource.all({ filter: query.filter });
-  return imageSummary.rank(images.map(imageSummary.summaryOf).sort(imageSummary.compare));
+function handler({ accountId, filter }) {
+  assert(accountId !== undefined, 'accountId is required');
+  return getPartitionsInAccount(accountId)
+    .then(ps => Promise.map(ps, ({ region }) => ec2ImageResourceFactory.all({ accountId, region, filter })))
+    .then(fp.flatten)
+    .then(images => imageSummary.rank(images.map(imageSummary.summaryOf).sort(imageSummary.compare)));
 }
 
-module.exports = co.wrap(handler);
-
+module.exports = handler;

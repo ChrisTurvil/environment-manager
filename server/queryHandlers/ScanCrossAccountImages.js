@@ -2,8 +2,23 @@
 
 'use strict';
 
-let scanCrossAccount = require('modules/queryHandlersUtil/scanCrossAccount');
+let Promise = require('bluebird');
+let fp = require('lodash/fp');
+let ec2ImageResourceFactory = require('modules/resourceFactories/ec2ImageResourceFactory');
+let imageSummary = require('modules/machineImage/imageSummary');
+let assert = require('assert');
+let { scanPartitions } = require('modules/amazon-client/awsPartitions');
 
-module.exports = function ScanCrossAccountImages(query) {
-  return scanCrossAccount(query, 'ScanImages');
-};
+/**
+ * Get all the EC2 images ordered by AMI Type (lexicographical, ascending) then by
+ * AMI version (semver, descending).
+ */
+function handler({ accountId, filter }) {
+  assert(accountId !== undefined, 'accountId is required');
+  return scanPartitions(accountId)
+    .then(ps => Promise.map(ps, ({ region }) => ec2ImageResourceFactory.all({ accountId, region, filter })))
+    .then(fp.flatten)
+    .then(images => imageSummary.rank(images.map(imageSummary.summaryOf).sort(imageSummary.compare)));
+}
+
+module.exports = handler;

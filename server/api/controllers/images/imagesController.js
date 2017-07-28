@@ -2,34 +2,26 @@
 
 'use strict';
 
-let sender = require('modules/sender');
 let _ = require('lodash');
+let { getByName: getAccount } = require('modules/awsAccounts');
+let ScanImages = require('queryHandlers/ScanImages');
+let ScanCrossAccountImages = require('queryHandlers/ScanCrossAccountImages');
 
 function getImages(req, res, next) {
   const accountName = req.swagger.params.account.value;
   const stable = req.swagger.params.stable.value;
-  let query;
 
-  if (accountName === undefined) {
-    query = {
-      name: 'ScanCrossAccountImages',
-      filter: {}
-    };
-  } else {
-    query = {
-      name: 'ScanImages',
-      accountName,
-      filter: {}
-    };
-  }
+  let imagesP = (accountName !== undefined
+    ? getAccount(accountName)
+      .then(({ AccountNumber }) => ScanImages({ accountId: `${AccountNumber}` }))
+    : ScanCrossAccountImages());
 
-  sender.sendQuery({ query }).then((data) => {
-    if (stable !== undefined) {
-      res.json(_.filter(data, { IsStable: stable }));
-    } else {
-      res.json(data);
-    }
-  }).catch(next);
+  return imagesP
+    .then(data => (stable !== undefined
+      ? _.filter(data, { IsStable: stable })
+      : data))
+    .then(data => res.json(data))
+    .catch(next);
 }
 
 module.exports = {
