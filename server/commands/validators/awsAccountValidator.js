@@ -2,7 +2,7 @@
 
 'use strict';
 
-let childAWSclient = require('modules/amazon-client/childAccountClient');
+let { getCredentialsForRole } = require('modules/amazon-client/awsCredentials');
 let logger = require('modules/logger');
 let co = require('co');
 
@@ -26,7 +26,7 @@ function validate(account) {
     validateAccountNumber(account.AccountNumber);
 
     try {
-      yield childAWSclient.assumeRole(account.RoleArn);
+      yield getCredentialsForRole(account.RoleArn);
     } catch (error) {
       logger.error(`Rejected attempt to add account ${account.AccountName} with role ARN ${account.RoleArn}`);
       throw new Error(`Cannot assume role for ARN: ${account.RoleArn}`);
