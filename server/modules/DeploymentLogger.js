@@ -12,26 +12,30 @@ let logger = require('modules/logger');
 
 module.exports = {
   started(deployment, accountName) {
+    let { SpawnedBy } = deployment;
     let record = {
       AccountName: deployment.accountName,
       DeploymentID: deployment.id,
-      Value: {
-        DeploymentType: 'Parallel',
-        EnvironmentName: deployment.environmentName,
-        EnvironmentType: deployment.environmentTypeName,
-        OwningCluster: deployment.clusterName,
-        SchemaVersion: 2,
-        ServiceName: deployment.serviceName,
-        ServiceSlice: deployment.serviceSlice,
-        ServiceVersion: deployment.serviceVersion,
-        RuntimeServerRoleName: deployment.serverRole,
-        ServerRoleName: deployment.serverRoleName,
-        Status: 'In Progress',
-        User: deployment.username,
-        StartTimestamp: new Date().toISOString(),
-        EndTimestamp: null,
-        ExecutionLog: []
-      }
+      Value: Object.assign(
+        {
+          DeploymentType: 'Parallel',
+          EnvironmentName: deployment.environmentName,
+          EnvironmentType: deployment.environmentTypeName,
+          OwningCluster: deployment.clusterName,
+          SchemaVersion: 2,
+          ServiceName: deployment.serviceName,
+          ServiceSlice: deployment.serviceSlice,
+          ServiceVersion: deployment.serviceVersion,
+          RuntimeServerRoleName: deployment.serverRole,
+          ServerRoleName: deployment.serverRoleName,
+          Status: 'In Progress',
+          User: deployment.username,
+          StartTimestamp: new Date().toISOString(),
+          EndTimestamp: null,
+          ExecutionLog: []
+        },
+        SpawnedBy ? { SpawnedBy } : { }
+      )
     };
 
     return deployments.create(record).then(() => {

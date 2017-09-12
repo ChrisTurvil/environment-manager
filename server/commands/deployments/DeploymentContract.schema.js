@@ -51,6 +51,22 @@ module.exports = {
     username: {
       description: 'The name of the user',
       type: 'string'
+    },
+    SpawnedBy: {
+      description: 'Reference to the task that spawned this deployment',
+      type: 'object',
+      properties: {
+        JobId: {
+          type: 'string'
+        },
+        TaskId: {
+          type: 'string'
+        }
+      },
+      required: [
+        'JobId',
+        'TaskId'
+      ]
     }
   },
   required: [

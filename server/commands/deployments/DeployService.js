@@ -46,7 +46,7 @@ module.exports = function DeployServiceCommandHandler(command) {
 
 function validateCommandAndCreateDeployment(command) {
   return co(function* () {
-    const { mode, environmentName, serverRole, serviceSlice, serviceName, serviceVersion } = command;
+    const { mode, environmentName, serverRole, serviceSlice, serviceName, serviceVersion, SpawnedBy } = command;
 
     if (mode === 'overwrite' && serviceSlice !== undefined && serviceSlice !== 'none') {
       throw new Error('Slice must be set to \'none\' in overwrite mode.');
@@ -99,21 +99,23 @@ function validateCommandAndCreateDeployment(command) {
     );
 
     let roleName = namingConventionProvider.getRoleName(configuration, serviceSlice);
-
-    let deploymentContract = new DeploymentContract({
-      id: command.commandId,
-      environmentTypeName: configuration.environmentTypeName,
-      environmentName,
-      serviceName,
-      serviceVersion,
-      serviceSlice: serviceSlice || '',
-      servicePortConfig,
-      serverRole: roleName,
-      serverRoleName,
-      clusterName: configuration.cluster.Name,
-      accountName: command.accountName,
-      username: command.username
-    });
+    let deploymentContract = new DeploymentContract(Object.assign(
+      {
+        id: command.commandId,
+        environmentTypeName: configuration.environmentTypeName,
+        environmentName,
+        serviceName,
+        serviceVersion,
+        serviceSlice: serviceSlice || '',
+        servicePortConfig,
+        serverRole: roleName,
+        serverRoleName,
+        clusterName: configuration.cluster.Name,
+        accountName: command.accountName,
+        username: command.username
+      },
+      SpawnedBy ? { SpawnedBy } : { }
+    ));
     yield deploymentContract.validate(configuration);
     return deploymentContract;
   });

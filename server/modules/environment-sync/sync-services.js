@@ -17,7 +17,7 @@ function nextSlice(slice) {
   }
 }
 
-function runJob(myEnvironment, serviceEnvironmentPairs) {
+function runJob(JobId, myEnvironment, serviceEnvironmentPairs) {
   function describeServiceAction({ Environment, Service }) {
     let myActiveServiceP = getActiveDiscoServiceVersionAsync(myEnvironment, Service);
     let theirActiveServiceP = getActiveDiscoServiceVersionAsync(Environment, Service);
@@ -32,6 +32,7 @@ function runJob(myEnvironment, serviceEnvironmentPairs) {
           TheirVersion: theirActiveService.version
         };
       }
+      let TaskId = 'DeployService';
       let deployParams = Object.assign(
         {
           commandId: guid(),
@@ -40,12 +41,14 @@ function runJob(myEnvironment, serviceEnvironmentPairs) {
           serviceName: Service,
           serviceVersion: theirActiveService.version,
           mode: targetSlice ? 'bg' : 'overwrite',
-          isDryRun: false
+          isDryRun: false,
+          SpawnedBy: { JobId, TaskId }
         },
         targetSlice ? { serviceSlice: nextSlice(targetSlice) } : {}
       );
       return deploy(deployParams)
         .then(({ id }) => ({
+          TaskId,
           InfoLocation: `/api/v1/deployments/${id}`,
           MyVersion: myActiveService.version,
           Service,
