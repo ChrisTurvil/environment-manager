@@ -2,15 +2,11 @@
 
 const MessageType = {
   NewJob: 'NewJob',
+  RunTask: 'RunTask',
   TaskStarted: 'TaskStarted',
   TaskCompleted: 'TaskCompleted',
   TaskFailed: 'TaskFailed'
 };
-
-// Common Message Fields
-{
-  Type
-}
 
 module.exports = {
   MessageType

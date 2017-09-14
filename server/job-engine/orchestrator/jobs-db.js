@@ -2,6 +2,7 @@
 
 let AWS = require('aws-sdk');
 let { terminalStates } = require('../task');
+let now = require('../now');
 
 let DocumentClient = new AWS.DynamoDB.DocumentClient();
 let TableName = process.env.JOBS_TABLE;
@@ -37,12 +38,13 @@ function updateTask(JobId, TaskId, { Seq = 0, Status, Result }) {
     .then(() => ({
       Key: { JobId },
       UpdateExpression: [
-        'SET Tasks.#TaskId.#Seq = :Seq, Tasks.#TaskId.#Status = :Status',
+        'SET Tasks.#TaskId.#LastModified = :LastModified, Tasks.#TaskId.#Seq = :Seq, Tasks.#TaskId.#Status = :Status',
         Result !== undefined ? 'Tasks.#TaskId.#Result = :Result' : undefined
       ].filter(s => s !== undefined).join(', '),
       ConditionExpression: '#Status not in :terminalStates and Tasks.#TaskId.#Seq < :Seq',
       ExpressionAttributeNames: Object.assign(
         {
+          '#LastModified': 'LastModified',
           '#Seq': 'Seq',
           '#Status': 'Status',
           '#TaskId': TaskId
@@ -51,6 +53,7 @@ function updateTask(JobId, TaskId, { Seq = 0, Status, Result }) {
       ),
       ExpressionAttributeValues: Object.assign(
         {
+          ':LastModified': now(),
           ':Seq': Seq,
           ':Status': Status,
           ':terminalStates': terminalStates

@@ -1,61 +1,37 @@
 'use strict';
 
-let AWS = require('aws-sdk');
-let Promise = require('bluebird');
-let jobsDb = require('./jobs-db');
+let fp = require('lodash/fp');
+let taskRules = require('task-rules');
 let log = require('../log');
-let now = require('../now');
-let { getBlockedTasks, getRunnableTasks } = require('./taskGraph');
-let { terminalStates, STATUS: { pending, queued, running, completed, failed } } = require('../task');
-
-let SampleJob = {
-  JobId: '123',
-  Status: pending,
-  Tasks: {
-    Deploy1: {
-      ExpiresAt: 1505307558291,
-      Command: 'deploy/v1',
-      Seq: 3,
-      Status: running,
-      Result: null
-    },
-    Toggle1: {
-      DependsOn: ['Deploy1'],
-      ExpiresAt: 1505307558291,
-      Command: 'toggle/v1',
-      Seq: 0,
-      Status: pending,
-      Result: null
-    }
-  }
-};
-
-let sqs = new AWS.SQS();
+let { isTerminalState } = require('../task');
 
 function goal({ Status }) {
-  return terminalStates.some(s => s === Status);
+  return isTerminalState(Status);
 }
 
-function isExpired(task) {
-  let { ExpiresAt } = task;
-  return Number.isInteger(ExpiresAt) && now() < ExpiresAt;
-}
-
-function hasRunnableTasks({ Tasks }) {
-  return getRunnableTasks(Tasks).some();
-}
-
-function enqueueTasks({ JobId, Tasks }) {
-  function enqueueTask() {
-    // Construct the message
-    // Send the message
-    // Mark the task as queued
-  }
-  return Promise.map(getRunnableTasks(Tasks), enqueueTask);
+function applyTaskRules(job) {
+  let rules = taskRules(job);
+  return fp.flow(
+    fp.get(['Tasks']),
+    fp.toPairs,
+    fp.map(rules.apply),
+    fp.flatten
+  )(job);
 }
 
 let jobRules = [
-  [hasRunnableTasks, enqueueTasks]
-  [hasNoReachableTasks, terminateJob]
+  [() => true, applyTaskRules]
+  // [hasNoReachableTasks, terminateJob]
 ];
 
+function apply(job) {
+  return goal(job)
+    ? []
+    : fp.flow(
+      fp.filter(([predicate]) => predicate(job)),
+      fp.map(action => action(job)),
+      fp.flatten
+    )(jobRules);
+}
+
+module.exports = { apply };

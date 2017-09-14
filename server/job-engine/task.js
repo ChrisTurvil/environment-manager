@@ -23,7 +23,12 @@ assert(isAcyclic(g));
 
 const terminal = g.sinks();
 
+function isTerminalState(s) {
+  return terminal.some(t => t === s);
+}
+
 module.exports = {
   STATUS,
+  isTerminalState,
   terminalStates: terminal
 };
