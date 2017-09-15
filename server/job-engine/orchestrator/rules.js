@@ -1,8 +1,7 @@
 'use strict';
 
 let fp = require('lodash/fp');
-let taskRules = require('task-rules');
-let log = require('../log');
+let taskRules = require('./task-rules');
 let { isTerminalState } = require('../task');
 
 function goal({ Status }) {

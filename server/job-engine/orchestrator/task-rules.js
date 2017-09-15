@@ -2,7 +2,6 @@
 
 let AWS = require('aws-sdk');
 let fp = require('lodash/fp');
-let log = require('../log');
 let now = require('../now');
 let { isTerminalState, STATUS: { pending, queued, completed, failed } } = require('../task');
 
@@ -24,17 +23,18 @@ function isBlocked({ DependsOn = [], Status }, { Tasks }) {
   return !isTerminalState(Status) && DependsOn.some(dependency => Tasks[dependency].Status === failed);
 }
 
-function enqueueTask(TaskId, { Command, Seq }, { JobId }) {
-  return [({ jobsDb, receiveQueueUrl, workQueueUrl }) => {
+function enqueueTask(TaskId, { Args, Command, Seq }, { JobId }) {
+  return [({ jobsDb, orchestratorQueueUrl, workQueueUrl }) => {
     let seq = Seq + 1;
     let params = {
-      MessageBody: {
+      MessageBody: JSON.stringify({
         JobId,
         TaskId,
         Command,
-        ReplyTo: receiveQueueUrl,
+        Args,
+        ReplyTo: orchestratorQueueUrl,
         Seq: seq
-      },
+      }),
       QueueUrl: workQueueUrl
     };
     return sqs.sendMessage(params).promise()

@@ -1,20 +1,12 @@
 'use strict';
 
 let Promise = require('bluebird');
+let listen = require('../listen');
 let receiver = require('./receiver');
-let log = require('../log');
-
-function foreverAsync(cancellationToken, fn, init) {
-  return cancellationToken.cancel
-    ? Promise.resolve(init)
-    : Promise.resolve(init)
-      .then(fn)
-      .then(result => foreverAsync(cancellationToken, fn, result));
-}
 
 function start(workQueueUrl) {
   let cancellationToken = { cancel: false };
-  let receiveForeverP = foreverAsync(cancellationToken, () => receiver.receive(workQueueUrl).catch(log));
+  let receiveForeverP = listen(cancellationToken, workQueueUrl, receiver);
   return {
     promise: receiveForeverP,
     stop() {
