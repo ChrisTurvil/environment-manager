@@ -22,6 +22,22 @@ function getJob(JobId) {
     .promise();
 }
 
+function scanActive() {
+  let params = {
+    TableName,
+    IndexName: `${TableName}_Status_index`,
+    KeyConditionExpression: '#Status = :active',
+    ExpressionAttributeNames: {
+      '#Status': 'Status'
+    },
+    ExpressionAttributeValues: {
+      ':Status': 'active'
+    }
+  };
+  return DocumentClient.query(params)
+    .promise();
+}
+
 function insertJob(job) {
   let params = {
     Item: job,
@@ -88,6 +104,7 @@ function updateJob(JobId, { Status }) {
 module.exports = {
   getJob,
   insertJob,
+  scanActive,
   updateJob,
   updateTask
 };

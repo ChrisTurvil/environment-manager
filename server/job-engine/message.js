@@ -1,6 +1,6 @@
 'use strict';
 
-const MessageType = {
+const MESSAGE_TYPE = {
   NewJob: 'NewJob',
   RunTask: 'RunTask',
   TaskStarted: 'TaskStarted',
@@ -9,5 +9,5 @@ const MessageType = {
 };
 
 module.exports = {
-  MessageType
+  MESSAGE_TYPE
 };

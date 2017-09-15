@@ -4,12 +4,7 @@ let AWS = require('aws-sdk');
 let Promise = require('bluebird');
 let jobsDb = require('./jobs-db');
 let log = require('../log');
-let {
-  NewJob,
-  TaskStarted,
-  TaskCompleted,
-  TaskFailed
-} = require('../message');
+let { MESSAGE_TYPE: { NewJob, TaskStarted, TaskCompleted, TaskFailed } } = require('../message');
 
 let sqs = new AWS.SQS();
 
@@ -50,11 +45,18 @@ function receive(QueueUrl) {
     QueueUrl,
     WaitTimeSeconds: 20
   };
+
+  function receiveOne(message) {
+    return Promise.resolve(message)
+      .then(({ Body }) => process(Body))
+      .then(() => message)
+      .then(({ ReceiptHandle }) => sqs.deleteMessage({ QueueUrl, ReceiptHandle }).promise())
+      .catch(log);
+  }
+
   return sqs.receiveMessage(params)
     .promise()
-    .then(messages => Promise.map(messages, message => process(message)
-      .then(({ ReceiptHandle }) => sqs.deleteMessage({ QueueUrl, ReceiptHandle }))
-      .catch(log)));
+    .then(({ Messages = [] }) => Promise.map(Messages, receiveOne));
 }
 
 module.exports = {

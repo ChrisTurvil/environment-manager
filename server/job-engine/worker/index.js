@@ -4,21 +4,21 @@ let Promise = require('bluebird');
 let receiver = require('./receiver');
 let log = require('../log');
 
-function foreverAsync(cancel, fn, init) {
-  return cancel
+function foreverAsync(cancellationToken, fn, init) {
+  return cancellationToken.cancel
     ? Promise.resolve(init)
     : Promise.resolve(init)
       .then(fn)
-      .then(result => foreverAsync(cancel, fn, result));
+      .then(result => foreverAsync(cancellationToken, fn, result));
 }
 
 function start(workQueueUrl) {
-  let cancel = false;
-  let receiveForeverP = foreverAsync(cancel, () => receiver.receive(workQueueUrl).catch(log));
+  let cancellationToken = { cancel: false };
+  let receiveForeverP = foreverAsync(cancellationToken, () => receiver.receive(workQueueUrl).catch(log));
   return {
     promise: receiveForeverP,
     stop() {
-      cancel = true;
+      cancellationToken.cancel = true;
       return receiveForeverP;
     }
   };

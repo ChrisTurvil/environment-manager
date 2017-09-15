@@ -8,16 +8,16 @@ let log = require('../log');
 
 const ORCHESTRATOR_RULES_PERIOD = 5000;
 
-function foreverAsync(cancel, fn, init) {
-  return cancel
+function foreverAsync(cancellationToken, fn, init) {
+  return cancellationToken.cancel
     ? Promise.resolve(init)
     : Promise.resolve(init)
       .then(fn)
-      .then(result => foreverAsync(cancel, fn, result));
+      .then(result => foreverAsync(cancellationToken, fn, result));
 }
 
 function converge(receiveQueueUrl, workQueueUrl) {
-  let activeJobsP = jobsDb.getActive().catch((error) => { log(error); return []; });
+  let activeJobsP = jobsDb.scanActive().catch((error) => { log(error); return []; });
   function runActions(actions) {
     return Promise.map(action => action({ jobsDb, receiveQueueUrl, workQueueUrl }).catch(log));
   }
@@ -26,14 +26,14 @@ function converge(receiveQueueUrl, workQueueUrl) {
 }
 
 function start(receiveQueueUrl, workQueueUrl) {
-  let cancel = false;
-  let receiveForeverP = foreverAsync(cancel, () => receiver.receive(receiveQueueUrl).catch(log));
-  let convergeForeverP = foreverAsync(cancel, () => converge(receiveQueueUrl, workQueueUrl).catch(log));
+  let cancellationToken = { cancel: false };
+  let receiveForeverP = foreverAsync(cancellationToken, () => receiver.receive(receiveQueueUrl).catch(log));
+  let convergeForeverP = foreverAsync(cancellationToken, () => converge(receiveQueueUrl, workQueueUrl).catch(log));
   let runningP = Promise.all([receiveForeverP, convergeForeverP]);
   return {
     promise: runningP,
     stop() {
-      cancel = true;
+      cancellationToken.cancel = true;
       return runningP;
     }
   };

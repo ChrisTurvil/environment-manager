@@ -2,4 +2,4 @@
 
 let console = require('console');
 
-module.exports = console.log.bind(console);
+module.exports = (x) => { console.log(x); return x; };
